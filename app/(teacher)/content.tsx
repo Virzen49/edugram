@@ -4,7 +4,7 @@ export default function TeacherContentScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Content</Text>
-      <Text style={styles.subtle}>Manage lessons and assignments here.</Text>
+      <Text style={styles.subtle}>Coming soon.</Text>
     </View>
   );
 }

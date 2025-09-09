@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import { colors } from '@/constants/colors';
 
 export default function TeacherClassesScreen() {
+  const router = useRouter();
   const { selectedId, title, students } = useLocalSearchParams<{ selectedId?: string; title?: string; students?: string }>();
   const classes = [
     { id: '10A', title: 'Class 10A', students: 25 },
@@ -21,10 +23,10 @@ export default function TeacherClassesScreen() {
         data={classes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.classRow}>
+          <Pressable style={styles.classRow} onPress={() => router.push(`/(teacher)/class/${item.id}?title=${encodeURIComponent(item.title)}&students=${item.students}`)}>
             <Text style={styles.className}>{item.title}</Text>
             <Text style={styles.classCount}>{item.students} students</Text>
-          </View>
+          </Pressable>
         )}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         style={{ marginTop: 12 }}

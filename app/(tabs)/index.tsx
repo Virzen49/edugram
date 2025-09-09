@@ -26,7 +26,7 @@ export default function HomeScreen() {
         });
         const data = await response.json();
         console.log('Profile data:', data);
-        setProfile(data.user);
+        setProfile(data);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -84,8 +84,8 @@ export default function HomeScreen() {
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <View style={styles.welcomeSection}>
-          <Text style={[styles.welcomeText, { color: theme.text }]}>{t('welcomeBack')} {profile?.email || 'User'}!</Text>
-          <Text style={[styles.gradeText, { color: theme.textSecondary }]}>Grade 10 • Delhi Public School</Text>
+          <Text style={[styles.welcomeText, { color: theme.text }]}>{t('welcomeBack')} {profile?.email || profile?.user?.name || 'User'}!</Text>
+          <Text style={[styles.gradeText, { color: theme.textSecondary }]}>Grade {profile?.student[0]?.grade || '12'} • {profile?.student[0]?.school_name || 'Delhi Public School'}</Text>
         </View>
         <TouchableOpacity 
           style={styles.profileButton}

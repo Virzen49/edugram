@@ -1,26 +1,26 @@
 export const typography = {
   title: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: '700' as const,
-    color: '#111827',
+    color: '#212529',
   },
   headline: {
     fontSize: 28,
     fontWeight: '700' as const,
-    color: '#111827',
+    color: '#212529',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#111827',
+    fontSize: 20,
+    fontWeight: '600' as const,
+    color: '#212529',
   },
   body: {
-    fontSize: 14,
-    color: '#374151',
+    fontSize: 16,
+    color: '#212529',
   },
   subtle: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#6C757D',
   },
 };
 

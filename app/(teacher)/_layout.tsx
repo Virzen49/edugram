@@ -17,16 +17,16 @@ export default function TeacherTabLayout() {
           paddingTop: 8,
           height: 70,
         },
-        tabBarLabelStyle: ({ focused }: any) => ({
+        tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: focused ? '700' : '500',
-        }) as any,
+          fontWeight: '600',
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Teacher Space',
           tabBarIcon: ({ size, color }) => <Home size={size} color={color} />,
         }}
       />
