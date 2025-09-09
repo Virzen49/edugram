@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Animated } from 'react-native';
-import { Bell, Settings, User, LogOut, Trophy, Star, TrendingUp } from 'lucide-react-native';
+import { Bell, Settings, User, LogOut, Trophy, Star, TrendingUp, Type, Grid3X3 } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,8 @@ import { getProfile } from '../api/auth';
 export default function HomeScreen() {
   const [profile, setProfile] = useState<any>();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [showSubjectSelection, setShowSubjectSelection] = useState(false);
   const router = useRouter();
   const { theme, t } = useApp();
 
@@ -125,8 +127,23 @@ export default function HomeScreen() {
   };
 
   const handleNotificationsPress = () => {
-    // Navigate to notifications page when implemented
-    console.log('Navigate to notifications');
+    router.push('/notifications');
+  };
+
+  const handleGameSelection = (gameType: string) => {
+    setSelectedGame(gameType);
+    setShowSubjectSelection(true);
+  };
+
+  const handleSubjectSelection = (subject: string) => {
+    setShowSubjectSelection(false);
+    // Navigate to game screen with game type and subject
+    router.push(`/game?type=${selectedGame}&subject=${subject}` as any);
+  };
+
+  const handleCloseSubjectSelection = () => {
+    setShowSubjectSelection(false);
+    setSelectedGame(null);
   };
 
   useEffect(() => {
@@ -212,6 +229,62 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
+      {/* Subject Selection Modal for Games */}
+      <Modal
+        visible={showSubjectSelection}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleCloseSubjectSelection}
+      >
+        <View style={styles.gameModalOverlay}>
+          <View style={[styles.subjectSelectionModal, { backgroundColor: theme.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Choose Subject for {selectedGame === 'hangman' ? 'Hangman' : 'Sudoku'}
+              </Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={handleCloseSubjectSelection}
+              >
+                <Text style={[styles.closeButtonText, { color: theme.textSecondary }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              Select a subject to play {selectedGame === 'hangman' ? 'word guessing game' : 'number puzzle'}
+            </Text>
+            
+            <View style={styles.subjectOptionsGrid}>
+              <TouchableOpacity 
+                style={[styles.subjectOption, { backgroundColor: theme.background }]}
+                onPress={() => handleSubjectSelection('chemistry')}
+              >
+                <View style={[styles.subjectOptionIcon, { backgroundColor: '#10B98120' }]}>
+                  <Text style={styles.subjectOptionEmoji}>⚛️</Text>
+                </View>
+                <Text style={[styles.subjectOptionName, { color: theme.text }]}>Chemistry</Text>
+                <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
+                  {selectedGame === 'hangman' ? 'Chemical terms' : 'Chemistry facts'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.subjectOption, { backgroundColor: theme.background }]}
+                onPress={() => handleSubjectSelection('mathematics')}
+              >
+                <View style={[styles.subjectOptionIcon, { backgroundColor: '#3B82F620' }]}>
+                  <Text style={styles.subjectOptionEmoji}>📐</Text>
+                </View>
+                <Text style={[styles.subjectOptionName, { color: theme.text }]}>Mathematics</Text>
+                <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
+                  {selectedGame === 'hangman' ? 'Math terms' : 'Number puzzles'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('activities')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activitiesScroll}>
@@ -274,6 +347,33 @@ export default function HomeScreen() {
               <Text style={styles.subjectEmoji}>📐</Text>
             </View>
             <Text style={[styles.subjectName, { color: theme.text }]}>{t('mathematics')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Games Section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Games</Text>
+        <View style={styles.gamesGrid}>
+          <TouchableOpacity 
+            style={[styles.gameCard, { backgroundColor: theme.surface }]}
+            onPress={() => handleGameSelection('hangman')}
+          >
+            <View style={[styles.gameIcon, { backgroundColor: '#8B5CF620' }]}>
+              <Type size={28} color="#8B5CF6" />
+            </View>
+            <Text style={[styles.gameName, { color: theme.text }]}>Hangman</Text>
+            <Text style={[styles.gameDescription, { color: theme.textSecondary }]}>Guess the word</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.gameCard, { backgroundColor: theme.surface }]}
+            onPress={() => handleGameSelection('sudoku')}
+          >
+            <View style={[styles.gameIcon, { backgroundColor: '#3B82F620' }]}>
+              <Grid3X3 size={28} color="#3B82F6" />
+            </View>
+            <Text style={[styles.gameName, { color: theme.text }]}>Sudoku</Text>
+            <Text style={[styles.gameDescription, { color: theme.textSecondary }]}>Number puzzle</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -662,5 +762,124 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+  // Games Section Styles
+  gamesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  gameCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    width: '47%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  gameIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  gameName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  gameDescription: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  // Modal Styles for Game Subject Selection
+  gameModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  subjectSelectionModal: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    flex: 1,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  closeButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  subjectOptionsGrid: {
+    gap: 16,
+  },
+  subjectOption: {
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  subjectOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  subjectOptionEmoji: {
+    fontSize: 24,
+  },
+  subjectOptionName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  subjectOptionDesc: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

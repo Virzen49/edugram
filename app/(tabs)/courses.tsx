@@ -140,7 +140,17 @@ export default function CoursesScreen() {
         try {
           const res = await getModules(Number(cat.id));
           const raw = normalizeModulesPayload(res.data);
-          const modules = raw.map((m: any, idx: number) => ({
+          
+          // Remove duplicates by module name to avoid duplicate algebra modules
+          const uniqueRaw = raw.filter((module, index, self) => {
+            const moduleName = module.module_name ?? module.name ?? String(module);
+            return index === self.findIndex(m => {
+              const mName = m.module_name ?? m.name ?? String(m);
+              return mName.toLowerCase() === moduleName.toLowerCase();
+            });
+          });
+          
+          const modules = uniqueRaw.map((m: any, idx: number) => ({
             id: m.mod_id ?? m.id ?? idx,
             name: m.module_name ?? m.name ?? String(m) ?? `Module ${m.mod_id ?? m.id ?? idx}`,
             raw: m,
@@ -223,7 +233,16 @@ export default function CoursesScreen() {
           }
 
           if (rawModules.length > 0) {
-            const modules = rawModules.map((m: any, idx: number) => ({
+            // Remove duplicates by module name to avoid duplicate algebra modules
+            const uniqueModules = rawModules.filter((module, index, self) => {
+              const moduleName = module.module_name ?? module.name ?? String(module);
+              return index === self.findIndex(m => {
+                const mName = m.module_name ?? m.name ?? String(m);
+                return mName.toLowerCase() === moduleName.toLowerCase();
+              });
+            });
+            
+            const modules = uniqueModules.map((m: any, idx: number) => ({
               id: m.mod_id ?? m.id ?? idx,
               name: m.module_name ?? m.name ?? String(m) ?? `Module ${m.mod_id ?? m.id ?? idx}`,
               raw: m,
@@ -289,17 +308,54 @@ export default function CoursesScreen() {
                 raw: u.raw ?? u,
               }));
 
-              // Convert uploads into "lessons" array for UI
-              const lessons = uploads.map((u: any) => ({
-                id: `${u.type}-${u.id}`,
-                name: u.title,
-                type: u.type === 'video' ? 'lesson' : 'notes',
-                fileUrl: u.fileUrl,
-                raw: u.raw,
-              }));
+              // Convert uploads into "lessons" array for UI with better naming
+              // Only take the FIRST lesson to avoid duplicates - show only ONE lesson per module
+              const firstUpload = uploads[0];
+              if (!firstUpload) {
+                const updated = [...categories];
+                updated[catIndex].subjects[modIndex] = { ...module, lessonsLoaded: true, lessons: [] };
+                setCategories(updated);
+                return;
+              }
+              
+              // Create a single lesson with descriptive name
+              let lessonName = firstUpload.title;
+              
+              // If the lesson title is the same as module name, create a more descriptive name
+              if (lessonName && lessonName.toLowerCase() === module.name.toLowerCase()) {
+                if (firstUpload.type === 'video') {
+                  lessonName = `${module.name} - Video`;
+                } else if (firstUpload.type === 'notes') {
+                  lessonName = `${module.name} - Notes`;
+                } else {
+                  lessonName = `${module.name} - Content`;
+                }
+              }
+              
+              // If title is generic or empty, create better names
+              if (!lessonName || lessonName.toLowerCase() === 'untitled' || lessonName.length < 3) {
+                if (firstUpload.type === 'video') {
+                  lessonName = `${module.name} - Video`;
+                } else if (firstUpload.type === 'notes') {
+                  lessonName = `${module.name} - Notes`;
+                } else {
+                  lessonName = `${module.name} - Content`;
+                }
+              }
+              
+              const singleLesson = {
+                id: `${firstUpload.type}-${firstUpload.id}`,
+                name: lessonName,
+                type: firstUpload.type === 'video' ? 'lesson' : 'notes',
+                fileUrl: firstUpload.fileUrl,
+                raw: firstUpload.raw,
+              };
+              
+              // Only use ONE lesson per module
+              const uniqueLessons = [singleLesson];
 
               const updated = [...categories];
-              updated[catIndex].subjects[modIndex] = { ...module, lessonsLoaded: true, lessons };
+              updated[catIndex].subjects[modIndex] = { ...module, lessonsLoaded: true, lessons: uniqueLessons };
               setCategories(updated);
             } else {
               console.warn('getLectures returned no uploads', res);
@@ -321,20 +377,11 @@ export default function CoursesScreen() {
     if (lesson.type === 'quiz') {
       const lessonId = encodeURIComponent(lesson.id);
       router.push(`/quiz?lessonId=${lessonId}&type=quiz&subjectId=${categoryId}&moduleId=${moduleId}`);
-      // mark completed after short delay
-      setTimeout(() => {
-        if (!completedLessons.includes(lesson.id)) markLessonCompleted(lesson.id);
-      }, 2000);
       return;
     }
 
     // For lesson resources (video/notes) navigate to the lecture screen using only category and module
     router.push(`/lecture?subjectId=${encodeURIComponent(String(categoryId))}&chapterId=${encodeURIComponent(String(moduleId))}`);
-
-    // mark completed after short delay
-    setTimeout(() => {
-      if (!completedLessons.includes(lesson.id)) markLessonCompleted(lesson.id);
-    }, 2000);
   };
 
   if (loadingCategories) {
@@ -417,11 +464,24 @@ export default function CoursesScreen() {
               const isModuleExpanded = expandedModule === String(module.id);
               const moduleAnimatedValue = getAnimatedValue(`module-${module.id}`);
 
+              // Calculate progress based on lesson completions with new key format
               const moduleStats = {
-                progress: (module.lessons || []).filter((l: any) =>
-                  completedLessons.includes(l.id)
-                ).length,
-                total: (module.lessons || []).length,
+                progress: (() => {
+                  // Count completed items for this module (video, notes, quiz)
+                  let completed = 0;
+                  const moduleKey = `lecture-${category.id}-${module.id}`;
+                  
+                  // Check if video is completed
+                  if (completedLessons.includes(`video-${moduleKey}`)) completed++;
+                  // Check if notes are completed
+                  if (completedLessons.includes(`notes-${moduleKey}`)) completed++;
+                  // Check if quiz is completed (for individual lessons)
+                  const lessonQuizKey = (module.lessons || [])[0]?.id;
+                  if (lessonQuizKey && completedLessons.includes(lessonQuizKey)) completed++;
+                  
+                  return completed;
+                })(),
+                total: 3, // Video + Notes + Quiz
               };
               const progressPercentage =
                 moduleStats.total > 0

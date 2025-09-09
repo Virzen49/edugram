@@ -4,14 +4,16 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Bookmark } from 'lucide-react-native';
+import { ArrowLeft, Bookmark, CheckCircle, Play } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { WebView } from 'react-native-webview';
 import { getLectures } from './api/course';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LessonScreen() {
   const { lessonId, subjectId, moduleId } =
@@ -20,7 +22,9 @@ export default function LessonScreen() {
       subjectId: string;
       moduleId: string;
     }>();
-  const [activeTab, setActiveTab] = useState<'Video' | 'Notes'>('Video');
+  const [activeTab, setActiveTab] = useState<'Video' | 'Notes' | 'Quiz'>('Video');
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const { theme } = useApp();
   const playerRef = useRef<any>(null);
 
@@ -53,8 +57,57 @@ export default function LessonScreen() {
         setLoading(false);
       }
     };
+    
+    const loadCompletionStatus = async () => {
+      try {
+        const completed = await AsyncStorage.getItem('completedLessons');
+        if (completed) {
+          const completedArray = JSON.parse(completed);
+          setCompletedLessons(completedArray);
+          // Check if current lesson is completed
+          const lessonKey = `${activeTab.toLowerCase()}-${lessonId}`;
+          setIsCompleted(completedArray.includes(lessonKey));
+        }
+      } catch (error) {
+        console.error('Error loading completion status:', error);
+      }
+    };
+    
     load();
-  }, [subjectId, moduleId, lessonId]);
+    loadCompletionStatus();
+  }, [subjectId, moduleId, lessonId, activeTab]);
+
+  const markAsComplete = async () => {
+    try {
+      const lessonKey = `${activeTab.toLowerCase()}-${lessonId}`;
+      
+      if (isCompleted) {
+        Alert.alert('Already Completed', 'This section is already marked as complete!');
+        return;
+      }
+      
+      const updatedCompleted = [...completedLessons, lessonKey];
+      await AsyncStorage.setItem('completedLessons', JSON.stringify(updatedCompleted));
+      setCompletedLessons(updatedCompleted);
+      setIsCompleted(true);
+      
+      Alert.alert(
+        'Completed! 🎉',
+        `${activeTab} section marked as complete. Great job!`,
+        [
+          {
+            text: 'Continue Learning',
+            onPress: () => {
+              // Optional: Navigate back to courses or next lesson
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error marking as complete:', error);
+      Alert.alert('Error', 'Failed to mark as complete. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -113,7 +166,7 @@ export default function LessonScreen() {
 
       {/* Tabs */}
       <View style={[styles.tabContainer, { backgroundColor: theme.surface }]}>
-        {['Video', 'Notes'].map((tab) => (
+        {['Video', 'Notes', 'Quiz'].map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab]}
@@ -123,14 +176,14 @@ export default function LessonScreen() {
               style={[
                 styles.tabText,
                 {
-                  color: activeTab === tab ? '#10B981' : theme.textSecondary,
+                  color: activeTab === tab ? theme.primary : theme.textSecondary,
                 },
                 activeTab === tab && styles.activeTabText,
               ]}
             >
               {tab}
             </Text>
-            {activeTab === tab && <View style={styles.activeTabIndicator} />}
+            {activeTab === tab && <View style={[styles.activeTabIndicator, { backgroundColor: theme.primary }]} />}
           </TouchableOpacity>
         ))}
       </View>
@@ -138,59 +191,129 @@ export default function LessonScreen() {
       {/* Content */}
       <ScrollView style={styles.content}>
         {activeTab === 'Video' && (
-          <View style={styles.videoContainer}>
-            {youtubeId ? (
-              <YoutubePlayer
-                ref={playerRef}
-                height={220}
-                play={false}
-                videoId={youtubeId}
-              />
-            ) : fileUrl.endsWith('.mp4') ? (
-              <WebView
-                originWhitelist={['*']}
-                source={{
-                  html: `
-                    <!DOCTYPE html>
-                    <html>
-                      <head><meta name="viewport" content="initial-scale=1" /></head>
-                      <body style="margin:0;background:#000;height:100%">
-                        <video controls style="width:100%;height:100%">
-                          <source src="${fileUrl}" type="video/mp4" />
-                        </video>
-                      </body>
-                    </html>
-                  `,
-                }}
-                style={{ height: 220, borderRadius: 12 }}
-                allowsInlineMediaPlayback
-                mediaPlaybackRequiresUserAction={false}
-              />
-            ) : (
-              <Text style={{ padding: 20 }}>No video available</Text>
-            )}
+          <View>
+            <View style={styles.videoContainer}>
+              {youtubeId ? (
+                <YoutubePlayer
+                  ref={playerRef}
+                  height={240}
+                  play={false}
+                  videoId={youtubeId}
+                  webViewStyle={{ borderRadius: 16 }}
+                />
+              ) : fileUrl.endsWith('.mp4') ? (
+                <WebView
+                  originWhitelist={['*']}
+                  source={{
+                    html: `
+                      <!DOCTYPE html>
+                      <html>
+                        <head>
+                          <meta name="viewport" content="width=device-width, initial-scale=1">
+                          <style>
+                            body { margin: 0; padding: 0; background: #000; }
+                            video { width: 100%; height: 240px; object-fit: cover; }
+                          </style>
+                        </head>
+                        <body>
+                          <video controls>
+                            <source src="${fileUrl}" type="video/mp4" />
+                          </video>
+                        </body>
+                      </html>
+                    `,
+                  }}
+                  style={{ height: 240, borderRadius: 16 }}
+                  allowsInlineMediaPlayback
+                  mediaPlaybackRequiresUserAction={false}
+                />
+              ) : (
+                <Text style={{ padding: 20, color: '#fff' }}>No video available</Text>
+              )}
+            </View>
+            
+            {/* Mark as Complete Button for Video */}
+            <TouchableOpacity
+              style={[
+                styles.completeButton,
+                { 
+                  backgroundColor: isCompleted ? '#10B981' : theme.primary,
+                  opacity: isCompleted ? 0.7 : 1
+                }
+              ]}
+              onPress={markAsComplete}
+              disabled={isCompleted}
+            >
+              <CheckCircle size={20} color="#FFFFFF" />
+              <Text style={styles.completeButtonText}>
+                {isCompleted ? '✓ Video Completed' : 'Mark Video as Complete'}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
         {activeTab === 'Notes' && (
-          <View style={{ flex: 1, height: 500 }}>
-            {isDocFile ? (
-              <WebView
-                source={{ uri: docViewerUrl }}
-                style={{ flex: 1 }}
-                startInLoadingState
-              />
-            ) : fileUrl ? (
-              <WebView
-                source={{ uri: fileUrl }}
-                style={{ flex: 1 }}
-                startInLoadingState
-              />
-            ) : (
-              <Text style={{ padding: 20 }}>
-                No notes or documents available.
+          <View>
+            <View style={{ flex: 1, height: 500 }}>
+              {isDocFile ? (
+                <WebView
+                  source={{ uri: docViewerUrl }}
+                  style={{ flex: 1 }}
+                  startInLoadingState
+                />
+              ) : fileUrl ? (
+                <WebView
+                  source={{ uri: fileUrl }}
+                  style={{ flex: 1 }}
+                  startInLoadingState
+                />
+              ) : (
+                <Text style={{ padding: 20 }}>
+                  No notes or documents available.
+                </Text>
+              )}
+            </View>
+            
+            {/* Mark as Complete Button for Notes */}
+            <TouchableOpacity
+              style={[
+                styles.completeButton,
+                { 
+                  backgroundColor: isCompleted ? '#10B981' : theme.primary,
+                  opacity: isCompleted ? 0.7 : 1
+                }
+              ]}
+              onPress={markAsComplete}
+              disabled={isCompleted}
+            >
+              <CheckCircle size={20} color="#FFFFFF" />
+              <Text style={styles.completeButtonText}>
+                {isCompleted ? '✓ Notes Completed' : 'Mark Notes as Complete'}
               </Text>
-            )}
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        {activeTab === 'Quiz' && (
+          <View style={styles.quizContainer}>
+            <View style={[styles.quizCard, { backgroundColor: theme.surface }]}>
+              <View style={styles.quizHeader}>
+                <Play size={32} color={theme.primary} />
+                <Text style={[styles.quizTitle, { color: theme.text }]}>Ready for Quiz?</Text>
+              </View>
+              <Text style={[styles.quizDescription, { color: theme.textSecondary }]}>
+                Test your knowledge with an interactive quiz based on this lesson content.
+              </Text>
+              <TouchableOpacity
+                style={[styles.startQuizButton, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  router.push(`/quiz?lessonId=${lessonId}&type=quiz&subjectId=${subjectId}&moduleId=${moduleId}`);
+                }}
+              >
+                <Play size={20} color="#FFFFFF" />
+                <Text style={styles.startQuizText}>Start Quiz</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -224,13 +347,87 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#10B981',
   },
   content: { flex: 1, padding: 20 },
   videoContainer: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#000',
-    height: 220,
+    height: 240,
+    marginHorizontal: 8,
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  completeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 20,
+    marginHorizontal: 8,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  completeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  quizContainer: {
+    padding: 20,
+  },
+  quizCard: {
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  quizHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  quizTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  quizDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  startQuizButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  startQuizText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

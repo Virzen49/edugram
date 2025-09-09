@@ -47,7 +47,7 @@ export const translations = {
   en: {
     // Authentication
     welcome: 'Welcome Back',
-    learnPlayAchieve: 'Learn.Play.Achieve',
+    learnPlayAchieve: 'Learn · Play · Analyze',
     enterEmail: 'Enter Email Address',
     enterPassword: 'Enter Password',
     login: 'Login',
@@ -332,6 +332,7 @@ export const translations = {
     // Logout
     logoutConfirm: 'શું તમે ખરેખર લોગઆઉટ કરવા માંગો છો?',
   }
+  // Add more languages as needed
   // Add more languages as needed
 };
 

@@ -1,139 +1,146 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 export default function SplashScreen() {
   const router = useRouter();
-  const fadeAnim = new Animated.Value(0);
-  const scaleAnim = new Animated.Value(0.8);
-  const glowAnim = new Animated.Value(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const logoPositionY = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(1)).current;
+  const textOpacity = useRef(new Animated.Value(1)).current;
+  const backgroundOpacity = useRef(new Animated.Value(1)).current;
+  const dotAnim1 = useRef(new Animated.Value(0.3)).current;
+  const dotAnim2 = useRef(new Animated.Value(0.3)).current;
+  const dotAnim3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    // Start animations
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(glowAnim, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Start pulsating dots animation
+    const createDotAnimation = (animValue: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(animValue, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animValue, {
+            toValue: 0.3,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
 
-    // Navigate after 3 seconds
-    const timer = setTimeout(() => {
-      router.replace('/(auth)/login');
-    }, 3000);
+    // Start dot animations
+    createDotAnimation(dotAnim1, 0).start();
+    createDotAnimation(dotAnim2, 200).start();
+    createDotAnimation(dotAnim3, 400).start();
 
-    return () => clearTimeout(timer);
+    // Phase 1: Initial fade in (0.8s)
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start(() => {
+      // Phase 2: Hold position (1.2s)
+      setTimeout(() => {
+        // Phase 3: Animate logo to final position (1.2s)
+        Animated.parallel([
+          // Move logo up to login position
+          Animated.timing(logoPositionY, {
+            toValue: -height * 0.25, // Move up by 25% of screen height
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          // Scale down logo to match login size
+          Animated.timing(logoScale, {
+            toValue: 0.75,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          // Fade out text
+          Animated.timing(textOpacity, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          // Fade out background to prepare for transition
+          Animated.timing(backgroundOpacity, {
+            toValue: 0,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          // Navigate to login after animation completes
+          router.replace('/(auth)/login');
+        });
+      }, 1200);
+    });
   }, []);
 
   return (
-    <LinearGradient
-      colors={['#1a1a1a', '#2d2d2d', '#404040']}
-      style={styles.container}
+    <Animated.View 
+      style={[
+        styles.container,
+        {
+          opacity: backgroundOpacity,
+        }
+      ]}
     >
-      {/* Animated background glow */}
-      <Animated.View 
+      {/* White background with subtle gradient */}
+      <View style={styles.backgroundGradient} />
+      
+      {/* Main content */}
+      <Animated.View
         style={[
-          styles.backgroundGlow,
+          styles.content,
           {
-            opacity: glowAnim,
-            transform: [{
-              scale: glowAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.5, 1.2],
-              })
-            }]
+            opacity: fadeAnim,
+            transform: [
+              { translateY: logoPositionY },
+              { scale: logoScale },
+            ],
           }
         ]}
       >
-        <LinearGradient
-          colors={['rgba(255, 223, 0, 0.4)', 'rgba(255, 193, 7, 0.3)', 'rgba(255, 152, 0, 0.2)', 'transparent']}
-          style={styles.sunGradient}
-        />
-      </Animated.View>
+        {/* Logo with elegant shadows */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoShadow} />
+          <Image 
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
 
-      {/* Blur overlay for sophistication */}
-      <BlurView intensity={20} style={styles.blurOverlay}>
-        <LinearGradient
-          colors={['rgba(0, 0, 0, 0.1)', 'rgba(0, 0, 0, 0.05)', 'transparent']}
-          style={styles.overlayGradient}
-        />
-      </BlurView>
-
-      {/* Main content with animations */}
-      <View style={styles.content}>
-        <Animated.View
+        {/* App name and tagline */}
+        <Animated.View 
           style={[
-            styles.logoContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
+            styles.textContainer,
+            { opacity: textOpacity }
           ]}
         >
-          {/* Logo with enhanced shadows */}
-          <View style={styles.logoWrapper}>
-            <Image 
-              source={require('@/assets/images/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            
-            {/* Multiple shadow layers for depth */}
-            <View style={styles.logoShadow1} />
-            <View style={styles.logoShadow2} />
-            <View style={styles.logoShadow3} />
-          </View>
-
-          {/* Subtle animation particles */}
-          <Animated.View 
-            style={[
-              styles.particle1,
-              {
-                opacity: glowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.6],
-                })
-              }
-            ]}
-          />
-          <Animated.View 
-            style={[
-              styles.particle2,
-              {
-                opacity: glowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.4],
-                })
-              }
-            ]}
-          />
-          <Animated.View 
-            style={[
-              styles.particle3,
-              {
-                opacity: glowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.5],
-                })
-              }
-            ]}
-          />
+          <Text style={styles.appName}>Edugram</Text>
+          <Text style={styles.tagline}>Learn • Play • Achieve</Text>
         </Animated.View>
-      </View>
-    </LinearGradient>
+      </Animated.View>
+
+      {/* Elegant loading indicator */}
+      <Animated.View 
+        style={[
+          styles.loadingContainer,
+          { opacity: textOpacity }
+        ]}
+      >
+        <View style={styles.loadingDots}>
+          <Animated.View style={[styles.dot, { opacity: dotAnim1 }]} />
+          <Animated.View style={[styles.dot, { opacity: dotAnim2 }]} />
+          <Animated.View style={[styles.dot, { opacity: dotAnim3 }]} />
+        </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -142,130 +149,77 @@ const { width, height } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backgroundGlow: {
-    position: 'absolute',
-    width: width * 1.5,
-    height: width * 1.5,
-    borderRadius: width * 0.75,
-    alignSelf: 'center',
-    top: height * 0.15,
-  },
-  sunGradient: {
-    flex: 1,
-    borderRadius: width * 0.75,
-  },
-  blurOverlay: {
+  backgroundGradient: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-  },
-  overlayGradient: {
-    flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   content: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
   },
   logoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 40,
   },
-  logoWrapper: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 320,
-    height: 128,
-    zIndex: 15,
-  },
-  logoShadow1: {
+  logoShadow: {
     position: 'absolute',
-    width: 330,
-    height: 138,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 220,
+    height: 90,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderRadius: 20,
-    zIndex: 12,
-    shadowColor: '#FFD700',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 20,
-    elevation: 10,
-  },
-  logoShadow2: {
-    position: 'absolute',
-    width: 340,
-    height: 148,
-    backgroundColor: 'rgba(255, 215, 0, 0.05)',
-    borderRadius: 25,
-    zIndex: 11,
-    shadowColor: '#FFA500',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 30,
     elevation: 8,
   },
-  logoShadow3: {
-    position: 'absolute',
-    width: 350,
-    height: 158,
-    backgroundColor: 'rgba(255, 140, 0, 0.03)',
-    borderRadius: 30,
+  logo: {
+    width: 200,
+    height: 80,
     zIndex: 10,
-    shadowColor: '#FF8C00',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.15,
-    shadowRadius: 40,
-    elevation: 6,
   },
-  particle1: {
+  textContainer: {
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  appName: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: '500',
+    letterSpacing: 2,
+  },
+  loadingContainer: {
     position: 'absolute',
+    bottom: 80,
+    alignItems: 'center',
+  },
+  loadingDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dot: {
     width: 8,
     height: 8,
-    backgroundColor: '#FFD700',
     borderRadius: 4,
-    top: -60,
-    left: -80,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  particle2: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    backgroundColor: '#FFA500',
-    borderRadius: 3,
-    top: -40,
-    right: -70,
-    shadowColor: '#FFA500',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  particle3: {
-    position: 'absolute',
-    width: 4,
-    height: 4,
-    backgroundColor: '#FFE55C',
-    borderRadius: 2,
-    bottom: -50,
-    left: 60,
-    shadowColor: '#FFE55C',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: '#10B981',
   },
 });
