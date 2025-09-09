@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, FlatList, Image, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -28,6 +28,8 @@ export default function TeacherContentScreen() {
   const [quizChecklist, setQuizChecklist] = useState({ quiz: false });
   const [notesChecklist, setNotesChecklist] = useState({ note: false });
   const [uploadedVideo, setUploadedVideo] = useState(null);
+  const [uploadedPdf, setUploadedPdf] = useState(null);
+  const [pdfChecklist, setPdfChecklist] = useState({ pdf: false });
 
   // Sample data for uploads and discover content
   const classData = useMemo(
@@ -42,6 +44,11 @@ export default function TeacherContentScreen() {
   const handleVideoUpload = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: 'video/*' });
     if (!result.canceled) setUploadedVideo(result);
+  };
+
+  const handlePdfUpload = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+    if (!result.canceled) setUploadedPdf(result);
   };
 
   return (
@@ -83,16 +90,14 @@ export default function TeacherContentScreen() {
           <Picker.Item label="Module 2" value="mod2" />
         </Picker>
 
-        <Text style={styles.sectionTitle}>Select Chapter</Text>
-        <Picker
-          selectedValue={selectedChapter}
-          onValueChange={setSelectedChapter}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select Chapter" value="" />
-          <Picker.Item label="Chapter 1" value="ch1" />
-          <Picker.Item label="Chapter 2" value="ch2" />
-        </Picker>
+        <Text style={styles.sectionTitle}>Enter Chapter</Text>
+        <TextInput
+          style={styles.textInput}
+          value={selectedChapter}
+          onChangeText={setSelectedChapter}
+          placeholder="Enter chapter name"
+          placeholderTextColor="#9CA3AF"
+        />
       </View>
 
       {/* Upload Video Card */}
@@ -103,6 +108,26 @@ export default function TeacherContentScreen() {
         </TouchableOpacity>
         {uploadedVideo && uploadedVideo.assets && uploadedVideo.assets[0] && (
           <Text style={styles.selectedFile}>Selected: {uploadedVideo.assets[0].name}</Text>
+        )}
+        
+        {/* PDF Upload Checklist */}
+        <View style={styles.checklistItem}>
+          <Text style={styles.checklistLabel}>Upload PDF</Text>
+          <Switch
+            value={pdfChecklist.pdf}
+            onValueChange={val => setPdfChecklist({ ...pdfChecklist, pdf: val })}
+          />
+        </View>
+        
+        {pdfChecklist.pdf && (
+          <>
+            <TouchableOpacity style={styles.uploadButton} onPress={handlePdfUpload}>
+              <Text style={styles.uploadButtonText}>Select PDF</Text>
+            </TouchableOpacity>
+            {uploadedPdf && uploadedPdf.assets && uploadedPdf.assets[0] && (
+              <Text style={styles.selectedFile}>Selected: {uploadedPdf.assets[0].name}</Text>
+            )}
+          </>
         )}
       </View>
 
@@ -221,6 +246,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 8, marginTop: 8 },
   picker: { backgroundColor: '#F3F4F6', borderRadius: 8, marginBottom: 12 },
+  textInput: { backgroundColor: '#F3F4F6', borderRadius: 8, marginBottom: 12, padding: 12, fontSize: 16 },
   uploadButton: {
     backgroundColor: colors.primary,
     paddingVertical: 14,

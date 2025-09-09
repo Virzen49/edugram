@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Image, ScrollView, FlatList, Pressable, Animated, Easing, Modal, TextInput, Alert } from 'react-native';
+import Svg, { Line, Polyline, Circle } from 'react-native-svg';
 import { useRouter, usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -245,7 +246,7 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
               <Pressable 
                 onPress={() => {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  setNotifications(0);
+                  router.push('/(teacher)/notifications');
                 }}
               >
                 <MaterialCommunityIcons name="bell-outline" size={22} color={colors.text} />
@@ -352,72 +353,17 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
           <Pressable 
             style={styles.addClassButton}
             onPress={() => {
-              Alert.prompt(
-                'Add New Standard',
-                'Enter the standard number',
-                [{ text: 'Cancel', style: 'cancel' },
-                 { text: 'Add', onPress: (standardNumber) => {
-                    if (!standardNumber) return;
-                    const newClass = {
-                      id: standardNumber,
-                      title: `Standard ${standardNumber}`,
-                      students: 0,
-                      studentsList: [], // Add empty studentsList array
-                      image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
-                    };
-                    const updatedClasses = [...classData, newClass];
-                    setClassData(updatedClasses);
-                    saveClassData(updatedClasses);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                 }}
-                ]
-              );
+              // Redirect to content page
+              router.push('/(teacher)/content');
             }}
           >
-            <Text style={styles.addClassButtonText}>Add Class</Text>
+            <Text style={styles.addClassButtonText}>Upload Content</Text>
           </Pressable>
           <Pressable 
             style={styles.manageButton}
             onPress={() => {
-              Alert.alert(
-                'Manage Classes',
-                'What would you like to do?',
-                [
-                  { 
-                    text: 'Add Standard', 
-                    onPress: () => {
-                      Alert.prompt(
-                        'Add New Standard',
-                        'Enter the standard number',
-                        [{ text: 'Cancel', style: 'cancel' },
-                         { text: 'Add', onPress: (standardNumber) => {
-                            if (!standardNumber) return;
-                            const newClass = {
-                              id: standardNumber,
-                              title: `Standard ${standardNumber}`,
-                              students: 0,
-                              studentsList: [], // Add empty studentsList array
-                              image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
-                            };
-                            const updatedClasses = [...classData, newClass];
-                            setClassData(updatedClasses);
-                            saveClassData(updatedClasses);
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                         }}
-                        ]
-                      );
-                    } 
-                  },
-                  { 
-                    text: 'Reorder Classes', 
-                    onPress: () => {
-                      // Future implementation for reordering
-                      Alert.alert('Coming Soon', 'This feature will be available in the next update.');
-                    } 
-                  },
-                  { text: 'Cancel', style: 'cancel' }
-                ]
-              );
+              // Redirect to class management page
+              router.push('/(teacher)/classes');
             }}
           >
             <Text style={styles.manageButtonText}>Manage</Text>
@@ -485,24 +431,136 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
           <Text style={styles.bodyText}>Trouble Spots</Text>
         </View>
       </View>
+      
+      {/* Attendance Section */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 16 }}>
+        <Text style={styles.sectionTitle}>Attendance</Text>
+        <Pressable 
+          style={styles.viewAllButton}
+          onPress={() => router.push('/(teacher)/attendance')}
+        >
+          <Text style={styles.viewAllButtonText}>View All</Text>
+        </Pressable>
+      </View>
+      <Pressable 
+        style={styles.attendanceCard}
+        onPress={() => router.push('/(teacher)/attendance')}
+      >
+        <View style={styles.attendanceStats}>
+          <View style={styles.attendanceStat}>
+            <Text style={styles.attendanceValue}>85%</Text>
+            <Text style={styles.attendanceLabel}>Overall</Text>
+          </View>
+          <View style={styles.attendanceStat}>
+            <Text style={styles.attendanceValue}>42</Text>
+            <Text style={styles.attendanceLabel}>Present</Text>
+          </View>
+          <View style={styles.attendanceStat}>
+            <Text style={styles.attendanceValue}>7</Text>
+            <Text style={styles.attendanceLabel}>Absent</Text>
+          </View>
+        </View>
+        <Text style={styles.attendanceDate}>Today's Attendance</Text>
+      </Pressable>
 
       {/* My Uploads section removed as requested */}
 
       {/* Discover Content section removed as requested */}
-      {/* Analytics Snapshot */}
-      <Text style={styles.sectionTitle}>Analytics Snapshot</Text>
-      <View>
-        <View style={{ flexDirection: 'row', marginBottom: 8, paddingRight: 8 }}>
-          <Pressable onPress={() => Alert.alert('Literacy Analytics', 'View detailed literacy performance across all classes.')}>
-            <MetricCard icon="book-open-page-variant" label="Literacy" value={72} color={colors.chipSuccess} />
-          </Pressable>
-          <Pressable onPress={() => Alert.alert('Numeracy Analytics', 'Track numeracy skills and identify areas for improvement.')}>
-            <MetricCard icon="abacus" label="Numeracy" value={64} color={colors.primary} />
-          </Pressable>
-          <Pressable onPress={() => Alert.alert('Participation Analytics', 'Monitor student engagement and participation metrics.')}>
-            <MetricCard icon="drama-masks" label="Participation" value={81} color={colors.chipInfo} />
-          </Pressable>
+      {/* Analytics Graph */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 16 }}>
+        <Text style={styles.sectionTitle}>Analytics Overview</Text>
+        <Pressable 
+          style={styles.viewAllButton}
+          onPress={() => router.push('/(teacher)/analytics')}
+        >
+          <Text style={styles.viewAllButtonText}>View Details</Text>
+        </Pressable>
+      </View>
+      <Pressable 
+        style={styles.analyticsCard}
+        onPress={() => router.push('/(teacher)/analytics')}
+      >
+        <Text style={styles.analyticsTitle}>Overall Usage</Text>
+        <View style={styles.graphContainer}>
+          <Svg height="150" width="100%">
+            {/* Background grid lines */}
+            <Line x1="0" y1="30" x2="100%" y2="30" stroke="#E5E7EB" strokeWidth="1" />
+            <Line x1="0" y1="60" x2="100%" y2="60" stroke="#E5E7EB" strokeWidth="1" />
+            <Line x1="0" y1="90" x2="100%" y2="90" stroke="#E5E7EB" strokeWidth="1" />
+            <Line x1="0" y1="120" x2="100%" y2="120" stroke="#E5E7EB" strokeWidth="1" />
+            
+            {/* Data line */}
+            <Polyline
+              points="10,100 50,70 90,90 130,50 170,30 210,60 250,40"
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth="3"
+            />
+            
+            {/* Data points */}
+            <Circle cx="10" cy="100" r="4" fill={colors.primary} />
+            <Circle cx="50" cy="70" r="4" fill={colors.primary} />
+            <Circle cx="90" cy="90" r="4" fill={colors.primary} />
+            <Circle cx="130" cy="50" r="4" fill={colors.primary} />
+            <Circle cx="170" cy="30" r="4" fill={colors.primary} />
+            <Circle cx="210" cy="60" r="4" fill={colors.primary} />
+            <Circle cx="250" cy="40" r="4" fill={colors.primary} />
+          </Svg>
         </View>
+        <View style={styles.analyticsLegend}>
+          <Text style={styles.legendItem}>Mon</Text>
+          <Text style={styles.legendItem}>Tue</Text>
+          <Text style={styles.legendItem}>Wed</Text>
+          <Text style={styles.legendItem}>Thu</Text>
+          <Text style={styles.legendItem}>Fri</Text>
+          <Text style={styles.legendItem}>Sat</Text>
+          <Text style={styles.legendItem}>Sun</Text>
+        </View>
+      </Pressable>
+
+      {/* Top Performers Section */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 16 }}>
+        <Text style={styles.sectionTitle}>Top Performers</Text>
+        <Pressable 
+          style={styles.viewAllButton}
+          onPress={() => router.push('/(teacher)/analytics')}
+        >
+          <Text style={styles.viewAllButtonText}>View All</Text>
+        </Pressable>
+      </View>
+      <View style={styles.topPerformersContainer}>
+        <Pressable style={styles.performerCard}>
+          <View style={styles.performerRank}>
+            <Text style={styles.rankText}>1</Text>
+          </View>
+          <View style={styles.performerInfo}>
+            <Text style={styles.performerName}>Aditya Sharma</Text>
+            <Text style={styles.performerClass}>Standard 10</Text>
+          </View>
+          <Text style={styles.performerScore}>98%</Text>
+        </Pressable>
+        
+        <Pressable style={styles.performerCard}>
+          <View style={styles.performerRank}>
+            <Text style={styles.rankText}>2</Text>
+          </View>
+          <View style={styles.performerInfo}>
+            <Text style={styles.performerName}>Priya Patel</Text>
+            <Text style={styles.performerClass}>Standard 10</Text>
+          </View>
+          <Text style={styles.performerScore}>95%</Text>
+        </Pressable>
+        
+        <Pressable style={styles.performerCard}>
+          <View style={styles.performerRank}>
+            <Text style={styles.rankText}>3</Text>
+          </View>
+          <View style={styles.performerInfo}>
+            <Text style={styles.performerName}>Neha Gupta</Text>
+            <Text style={styles.performerClass}>Standard 11</Text>
+          </View>
+          <Text style={styles.performerScore}>92%</Text>
+        </Pressable>
       </View>
 
       {/* Weekly Schedule - Vertical Scroll */}
@@ -960,6 +1018,47 @@ const WeeklySchedule = forwardRef<WeeklyScheduleRefType, WeeklyScheduleProps>((p
 });
 
 const styles = StyleSheet.create({
+  attendanceCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  attendanceStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  attendanceStat: {
+    alignItems: 'center',
+  },
+  attendanceValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  attendanceLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  attendanceDate: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  viewAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: colors.primary + '20',
+  },
+  viewAllButtonText: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '500',
+  },
     container: {
       flex: 1,
       backgroundColor: colors.background,
