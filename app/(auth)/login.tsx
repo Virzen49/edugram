@@ -1,18 +1,16 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useApp } from '@/contexts/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const router = useRouter();
-
-const [email, setEmail] = useState('');
-
-const [password, setPassword] = useState('');
-
-const [isSubmitting, setIsSubmitting] = useState(false);
-
-const [errorMessage, setErrorMessage] = useState('');
+  const { theme, t } = useApp();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
 const handleLogin = async () => {
 
@@ -82,23 +80,29 @@ setIsSubmitting(false);
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={styles.logo}>EduGram</Text>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Learn.Play.Achieve</Text>
+        {/* Logo image - replace logo.png with your actual logo */}
+        <Image 
+          source={require('@/assets/images/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={[styles.title, { color: theme.text }]}>{t('welcome')}</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('learnPlayAchieve')}</Text>
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
         
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, { color: theme.text }]}>{t('enterEmail').replace('Enter ', '')}</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter Email Address"
+              style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
+              placeholder={t('enterEmail')}
+              placeholderTextColor={theme.textSecondary}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -107,41 +111,42 @@ setIsSubmitting(false);
           </View>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, { color: theme.text }]}>{t('enterPassword').replace('Enter ', '')}</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter Password"
+              style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
+              placeholder={t('enterPassword')}
+              placeholderTextColor={theme.textSecondary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
             />
           </View>
           
-          <TouchableOpacity style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]} onPress={handleLogin} disabled={isSubmitting}>
+          <TouchableOpacity style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled, { backgroundColor: theme.primary }]} onPress={handleLogin} disabled={isSubmitting}>
             {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={styles.loginButtonText}>{t('login')}</Text>
             )}
           </TouchableOpacity>
           
           <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            <Text style={[styles.forgotPassword, { color: theme.textSecondary }]}>{t('forgotPassword')}</Text>
           </TouchableOpacity>
           
           <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Or with</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+            <Text style={[styles.dividerText, { color: theme.textSecondary }]}>Or with</Text>
+            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
           </View>
           
-          <TouchableOpacity style={styles.googleButton}>
+          <TouchableOpacity style={[styles.googleButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={styles.googleIcon}>G</Text>
-            <Text style={styles.googleButtonText}>Login with Google</Text>
+            <Text style={[styles.googleButtonText, { color: theme.text }]}>{t('loginWithGoogle')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.schoolButton}>
-            <Text style={styles.schoolButtonText}>Login with School ID</Text>
+            <Text style={styles.schoolButtonText}>{t('loginWithSchool')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -152,7 +157,6 @@ setIsSubmitting(false);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
   },
   content: {
     flex: 1,
@@ -160,10 +164,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#22C55E',
-    textAlign: 'center',
+    width: 200,
+    height: 80,
+    alignSelf: 'center',
     marginBottom: 20,
   },
   title: {
@@ -193,19 +196,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#374151',
   },
   input: {
-    backgroundColor: '#F3F4F6',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 25,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   loginButton: {
-    backgroundColor: '#22C55E',
     paddingVertical: 16,
     borderRadius: 25,
     alignItems: 'center',
@@ -221,7 +220,6 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     textAlign: 'center',
-    color: '#6B7280',
     fontSize: 16,
   },
   divider: {
@@ -232,20 +230,16 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
   },
   dividerText: {
     marginHorizontal: 16,
-    color: '#6B7280',
     fontSize: 14,
   },
   googleButton: {
-    backgroundColor: '#FFFFFF',
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
@@ -256,7 +250,6 @@ const styles = StyleSheet.create({
     color: '#4285F4',
   },
   googleButtonText: {
-    color: '#374151',
     fontSize: 16,
     fontWeight: '500',
   },
