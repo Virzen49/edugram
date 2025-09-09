@@ -1,30 +1,72 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WebView } from 'react-native-webview';
-import lectures from './data/lectures';
+import { getLectures } from './api/course';
 
 export default function LectureScreen() {
   const { subjectId, chapterId } = useLocalSearchParams<{ subjectId: string; chapterId: string }>();
   const [activeTab, setActiveTab] = useState<'Video' | 'Notes' | 'Discussion'>('Video');
+  const [uploads, setUploads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // find lecture
-  let lectureData: any = null;
-  for (const cat of lectures) {
-    for (const subj of cat.subject) {
-      if (subj.id === subjectId) {
-        lectureData = subj.chapters.find((c : any) => c.id === Number(chapterId));
+  useEffect(() => {
+    const load = async () => {
+      if (!subjectId || !chapterId) {
+        setError('Missing subject or chapter id');
+        return;
       }
-    }
-  }
 
-  if (!lectureData) {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await getLectures(Number(subjectId), Number(chapterId));
+        if (res.ok && res.data && Array.isArray(res.data.uploads)) {
+          setUploads(res.data.uploads);
+        } else {
+          setError(res.data?.message || `Failed to load uploads (status ${res.status})`);
+        }
+      } catch (err: any) {
+        setError(err?.message || String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [subjectId, chapterId]);
+
+  // pick primary video (first video-type upload) and first notes file
+  const videoUpload = uploads.find(u => u.fileType === 'video');
+  const notesUpload = uploads.find(u => u.fileType === 'notes');
+
+  if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.error}>Lecture not found</Text>
+        <Text style={styles.progressText}>Loading...</Text>
       </View>
     );
   }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (uploads.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>No lecture uploads found for this module.</Text>
+      </View>
+    );
+  }
+
+  const title = videoUpload?.title || notesUpload?.title || uploads[0].title || 'Lecture';
 
   return (
     <View style={styles.container}>
@@ -34,24 +76,17 @@ export default function LectureScreen() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>{lectureData.name}</Text>
+          <Text style={styles.title}>{title}</Text>
           <TouchableOpacity style={styles.bookmarkButton}>
             <Text style={styles.bookmarkIcon}>🔖</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Progress */}
+      {/* Progress (simple: show number of uploads) */}
       <View style={styles.progressSection}>
-        <Text style={styles.progressTitle}>Quest Progress</Text>
-        <Text style={styles.progressText}>
-          {lectureData.progress}/{lectureData.total}
-        </Text>
-        <View style={styles.progressBarBackground}>
-          <View
-            style={[styles.progressBarFill, { width: `${(lectureData.progress / lectureData.total) * 100}%` }]}
-          />
-        </View>
+        <Text style={styles.progressTitle}>Resources</Text>
+        <Text style={styles.progressText}>{uploads.length} file{uploads.length !== 1 ? 's' : ''}</Text>
       </View>
 
       {/* Tabs */}
@@ -69,17 +104,34 @@ export default function LectureScreen() {
 
       {/* Content */}
       <View style={styles.tabContent}>
-        {activeTab === 'Video' && lectureData.fileType === 'video' && (
+        {activeTab === 'Video' && videoUpload && (
+          // render mp4 or other video urls inside a small HTML player so it works across platforms
+          <WebView
+            originWhitelist={["*"]}
+            source={{ html: `<!doctype html><html><head><meta name="viewport" content="initial-scale=1.0" /></head><body style="margin:0;padding:0;background:#000"><video controls style="width:100%;height:100%" src="${videoUpload.fileUrl}">Your browser does not support the video tag.</video></body></html>` }}
+            style={{ flex: 1, height: 300, borderRadius: 12 }}
+          />
+        )}
+
+        {activeTab === 'Video' && !videoUpload && (
           <View style={styles.videoPlaceholder}>
-            <Text style={{ color: '#fff' }}>Video: {lectureData.fileUrl}</Text>
+            <Text style={{ color: '#fff' }}>No video available</Text>
           </View>
         )}
-        {activeTab === 'Notes' && lectureData.fileType === 'notes' && (
-          <WebView source={{ uri: lectureData.fileUrl }} style={{ flex: 1 }} />
+
+        {activeTab === 'Notes' && notesUpload && (
+          <WebView source={{ uri: notesUpload.fileUrl }} style={{ flex: 1 }} />
         )}
+
+        {activeTab === 'Notes' && !notesUpload && (
+          <View style={{ padding: 20 }}>
+            <Text>No notes or documents available for this lecture.</Text>
+          </View>
+        )}
+
         {activeTab === 'Discussion' && (
           <ScrollView>
-            <Text>💬 Discussions coming soon...</Text>
+            <Text style={{ padding: 20 }}>💬 Discussions coming soon...</Text>
           </ScrollView>
         )}
       </View>

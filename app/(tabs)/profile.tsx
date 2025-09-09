@@ -3,6 +3,7 @@ import { ArrowLeft, Share, Trophy, Award, Target, Calendar, TrendingUp, Star, Bo
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
+import { getProfile } from '../api/auth';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
@@ -38,18 +39,8 @@ export default function ProfileScreen() {
       const token = await AsyncStorage.getItem('token');
       if (token) {
         // Fetch user profile
-        const response = await fetch(`http://10.103.211.237:3000/api/auth/profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        console.log('Full Profile Response:', JSON.stringify(data, null, 2));
-        console.log('Email field:', data.email);
-        console.log('User object:', data.user);
-        setProfile(data);
+        const res = await getProfile()
+        setProfile(res.data);
         
         // Fetch user stats/progress from backend if available
         try {

@@ -88,21 +88,7 @@ export default function LoginScreen() {
           <TouchableOpacity>
             <Text style={[styles.forgotPassword, { color: theme.textSecondary }]}>{t('forgotPassword')}</Text>
           </TouchableOpacity>
-          
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-            <Text style={[styles.dividerText, { color: theme.textSecondary }]}>Or with</Text>
-            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-          </View>
-          
-          <TouchableOpacity style={[styles.googleButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={styles.googleIcon}>G</Text>
-            <Text style={[styles.googleButtonText, { color: theme.text }]}>{t('loginWithGoogle')}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.schoolButton} onPress={() => router.push('/(auth)/school-login')}>
-            <Text style={styles.schoolButtonText}>{t('loginWithSchool')}</Text>
-          </TouchableOpacity>
+        
         </View>
       </View>
     </KeyboardAvoidingView>
