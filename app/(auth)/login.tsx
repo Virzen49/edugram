@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { login as apiLogin } from '../api/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -12,71 +12,26 @@ export default function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-const handleLogin = async () => {
+  const handleLogin = async () => {
+    if (isSubmitting) return;
+    setErrorMessage('');
 
-if (isSubmitting) return;
+    try {
+      setIsSubmitting(true);
+      const res = await apiLogin(email, password);
 
-setErrorMessage('');
-
-const loginData = {
-
-email: email,
-
-password: password,
-
-};
-
-try {
-
-setIsSubmitting(true);
-
-const response = await fetch('http://10.103.211.237:3000/api/auth/userlogin', {
-
-method: 'POST',
-
-headers: {
-
-'Content-Type': 'application/json',
-
-},
-
-body: JSON.stringify(loginData),
-
-});
-
-const result = await response.json().catch(() => ({}));
-
-if (response.ok) {
-
-// Optionally store token/user
-
-// e.g., await SecureStore.setItemAsync('token', result.token)
-
-// await SecureStore.setItemAsync('token' , result.token);
-
-await AsyncStorage.setItem('token', result.token);
-
-router.replace('/(tabs)');
-
-} else {
-
-const message = (result && (result.message || result.error)) || 'Login failed. Please try again.';
-
-setErrorMessage(message);
-
-}
-
-} catch (error: unknown) {
-
-setErrorMessage('Unable to reach server. Check your connection and try again.');
-
-} finally {
-
-setIsSubmitting(false);
-
-}
-
-};
+      if (res.ok) {
+        router.replace('/(tabs)');
+      } else {
+        const message = (res.data && (res.data.message || res.data.error)) || 'Login failed. Please try again.';
+        setErrorMessage(message);
+      }
+    } catch (err) {
+      setErrorMessage('Unable to reach server. Check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -145,7 +100,7 @@ setIsSubmitting(false);
             <Text style={[styles.googleButtonText, { color: theme.text }]}>{t('loginWithGoogle')}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.schoolButton}>
+          <TouchableOpacity style={styles.schoolButton} onPress={() => router.push('/(auth)/school-login')}>
             <Text style={styles.schoolButtonText}>{t('loginWithSchool')}</Text>
           </TouchableOpacity>
         </View>

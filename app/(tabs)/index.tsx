@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
+import { getProfile } from '../api/auth';
 
 
 
@@ -57,20 +58,10 @@ export default function HomeScreen() {
 
   const getProfileData = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        const response = await fetch(`http://10.103.211.237:3000/api/auth/profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        console.log('Profile data:', data);
-        setProfile(data);
-      }
-    } catch (error) {
+        const res = await getProfile()
+        console.log('Profile data:', res);
+        setProfile(res.data);
+      }catch (error) {
       console.error('Error fetching profile:', error);
     }
   };

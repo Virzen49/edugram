@@ -3,6 +3,8 @@
 
 import rawData from "./rawdata";
 
+
+
 const lectures : any = [];
 
 rawData.forEach((lec) => {
