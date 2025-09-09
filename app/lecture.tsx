@@ -4,6 +4,11 @@ import { useState } from 'react';
 import { WebView } from 'react-native-webview';
 import lectures from './data/lectures';
 
+// Helper function to calculate progress percentage
+const calculateProgressPercentage = (progress: number, total: number) => {
+  return progress > 0 && total > 0 ? (progress / total) * 100 : 0;
+};
+
 export default function LectureScreen() {
   const { subjectId, chapterId } = useLocalSearchParams<{ subjectId: string; chapterId: string }>();
   const [activeTab, setActiveTab] = useState<'Video' | 'Notes' | 'Discussion'>('Video');
@@ -49,7 +54,7 @@ export default function LectureScreen() {
         </Text>
         <View style={styles.progressBarBackground}>
           <View
-            style={[styles.progressBarFill, { width: `${lectureData.progress > 0 ? (lectureData.progress / lectureData.total) * 100 : 0}%` }]}
+            style={[styles.progressBarFill, { width: `${calculateProgressPercentage(lectureData.progress, lectureData.total)}%` }]}
           />
         </View>
       </View>

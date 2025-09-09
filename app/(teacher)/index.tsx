@@ -235,39 +235,42 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
       contentContainerStyle={{ padding: 20, paddingTop: 28 }} 
       showsVerticalScrollIndicator={false}
       onStartShouldSetResponder={() => true}
-      onResponderRelease={handleContentPress}>
-      <View style={[styles.topBar, { marginTop: 50, marginBottom: 24 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={styles.pageTitle}>Teacher Space</Text>
-          <View style={{ flexDirection: 'row', marginLeft: 10, gap: 15 }}>
-            <Pressable 
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setNotifications(0);
-              }}
-            >
-              <MaterialCommunityIcons name="bell-outline" size={22} color={colors.text} />
-              {notifications > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationText}>{notifications}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Pressable 
-              accessibilityRole="button" 
-              accessibilityLabel="Profile" 
-              onPress={toggleProfileMenu}
-            >
-              <UserCircle2 color={colors.text} size={22} />
-            </Pressable>
+      onResponderRelease={handleContentPress}
+      removeClippedSubviews={true}>
+      <View style={[styles.topBar, { marginTop: 40, marginBottom: 20 }]}>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={styles.pageTitle}>Teacher Space</Text>
+            <View style={{ flexDirection: 'row', gap: 15 }}>
+              <Pressable 
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  setNotifications(0);
+                }}
+              >
+                <MaterialCommunityIcons name="bell-outline" size={22} color={colors.text} />
+                {notifications > 0 && (
+                  <View style={styles.profileNotificationBadge}>
+<Text style={styles.profileNotificationText}>{notifications}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable 
+                accessibilityRole="button" 
+                accessibilityLabel="Profile" 
+                onPress={toggleProfileMenu}
+              >
+                <UserCircle2 color={colors.text} size={22} />
+              </Pressable>
+            </View>
           </View>
-        </View>
-        <View>
           <Animated.Text style={[styles.greeting, { opacity: greetingOpacity, marginTop: 8 }]} accessibilityRole="header" accessibilityLabel={greeting}>
             {greeting}
           </Animated.Text>
           <Text style={styles.dateText}>{dateText}</Text>
+
         </View>
+        {/* End of header section */}
           
           {/* Profile dropdown menu */}
           {showProfileMenu && (
@@ -343,54 +346,83 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
       {/* Quick Actions section removed as requested */}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Text style={styles.sectionTitle}>My Classes</Text>
-        <Pressable 
-          style={styles.manageButton}
-          onPress={() => {
-            Alert.alert(
-              'Manage Classes',
-              'What would you like to do?',
-              [
-                { 
-                  text: 'Add Standard', 
-                  onPress: () => {
-                    Alert.prompt(
-                      'Add New Standard',
-                      'Enter the standard number',
-                      [{ text: 'Cancel', style: 'cancel' },
-                       { text: 'Add', onPress: (standardNumber) => {
-                          if (!standardNumber) return;
-                          const newClass = {
-                            id: standardNumber,
-                            title: `Standard ${standardNumber}`,
-                            students: 0,
-                            studentsList: [], // Add empty studentsList array
-                            image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
-                          };
-                          const updatedClasses = [...classData, newClass];
-                          setClassData(updatedClasses);
-                          saveClassData(updatedClasses);
-                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                       }}
-                      ]
-                    );
-                  } 
-                },
-                { 
-                  text: 'Reorder Classes', 
-                  onPress: () => {
-                    // Future implementation for reordering
-                    Alert.alert('Coming Soon', 'This feature will be available in the next update.');
-                  } 
-                },
-                { text: 'Cancel', style: 'cancel' }
-              ]
-            );
-          }}
-        >
-          <Text style={styles.manageButtonText}>Manage Classes</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Pressable 
+            style={styles.addClassButton}
+            onPress={() => {
+              Alert.prompt(
+                'Add New Standard',
+                'Enter the standard number',
+                [{ text: 'Cancel', style: 'cancel' },
+                 { text: 'Add', onPress: (standardNumber) => {
+                    if (!standardNumber) return;
+                    const newClass = {
+                      id: standardNumber,
+                      title: `Standard ${standardNumber}`,
+                      students: 0,
+                      studentsList: [], // Add empty studentsList array
+                      image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
+                    };
+                    const updatedClasses = [...classData, newClass];
+                    setClassData(updatedClasses);
+                    saveClassData(updatedClasses);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                 }}
+                ]
+              );
+            }}
+          >
+            <Text style={styles.addClassButtonText}>Add Class</Text>
+          </Pressable>
+          <Pressable 
+            style={styles.manageButton}
+            onPress={() => {
+              Alert.alert(
+                'Manage Classes',
+                'What would you like to do?',
+                [
+                  { 
+                    text: 'Add Standard', 
+                    onPress: () => {
+                      Alert.prompt(
+                        'Add New Standard',
+                        'Enter the standard number',
+                        [{ text: 'Cancel', style: 'cancel' },
+                         { text: 'Add', onPress: (standardNumber) => {
+                            if (!standardNumber) return;
+                            const newClass = {
+                              id: standardNumber,
+                              title: `Standard ${standardNumber}`,
+                              students: 0,
+                              studentsList: [], // Add empty studentsList array
+                              image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
+                            };
+                            const updatedClasses = [...classData, newClass];
+                            setClassData(updatedClasses);
+                            saveClassData(updatedClasses);
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                         }}
+                        ]
+                      );
+                    } 
+                  },
+                  { 
+                    text: 'Reorder Classes', 
+                    onPress: () => {
+                      // Future implementation for reordering
+                      Alert.alert('Coming Soon', 'This feature will be available in the next update.');
+                    } 
+                  },
+                  { text: 'Cancel', style: 'cancel' }
+                ]
+              );
+            }}
+          >
+            <Text style={styles.manageButtonText}>Manage</Text>
+          </Pressable>
+        </View>
       </View>
       {classData.map((c) => (
         <Pressable
@@ -460,7 +492,7 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
       {/* Analytics Snapshot */}
       <Text style={styles.sectionTitle}>Analytics Snapshot</Text>
       <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ paddingRight: 8 }}>
+        <View style={{ flexDirection: 'row', marginBottom: 8, paddingRight: 8 }}>
           <Pressable onPress={() => Alert.alert('Literacy Analytics', 'View detailed literacy performance across all classes.')}>
             <MetricCard icon="book-open-page-variant" label="Literacy" value={72} color={colors.chipSuccess} />
           </Pressable>
@@ -470,7 +502,7 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
           <Pressable onPress={() => Alert.alert('Participation Analytics', 'Monitor student engagement and participation metrics.')}>
             <MetricCard icon="drama-masks" label="Participation" value={81} color={colors.chipInfo} />
           </Pressable>
-        </ScrollView>
+        </View>
       </View>
 
       {/* Weekly Schedule - Vertical Scroll */}
@@ -548,7 +580,7 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
             </View>
           </Pressable>
         </Modal>
-      </View> */}
+      </View>
     </ScrollView>
   );
 }
@@ -872,51 +904,58 @@ const WeeklySchedule = forwardRef<WeeklyScheduleRefType, WeeklyScheduleProps>((p
   };
   
   return (
-    <ScrollView style={styles.weeklySchedule} showsVerticalScrollIndicator={false}>
-      {scheduleData.map((daySchedule, index) => (
-        <View key={daySchedule.day} style={styles.dayRow}>
-          <View style={[styles.dayHeader, new Date().getDay() - 1 === index ? styles.currentDayHeader : null]}>
-            <Text style={styles.dayName}>{getDayName(weekDates[index])}</Text>
-            <Text style={styles.dayDate}>{formatDate(weekDates[index])}</Text>
+    <View style={styles.weeklySchedule}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, idx) => (
+          <View key={day} style={[styles.dayHeader, { flex: 1, marginHorizontal: 2, alignItems: 'center' }, new Date().getDay() - 1 === idx ? styles.currentDayHeader : null]}>
+            <Text style={[styles.dayName, { fontSize: 14 }]}>{day}</Text>
+            <Text style={[styles.dayDate, { fontSize: 12 }]}>{formatDate(weekDates[idx])}</Text>
           </View>
-          <View style={styles.scheduleItems}>
-            {daySchedule.items.length > 0 ? (
-              daySchedule.items.map((item) => (
-                <Pressable 
-                  key={item.id} 
-                  style={styles.scheduleItem}
-                  onLongPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    Alert.alert(
-                      'Schedule Item',
-                      `${item.title} at ${item.time}`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { 
-                          text: 'Delete', 
-                          style: 'destructive',
-                          onPress: () => deleteScheduleItem(item.id)
-                        }
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={styles.scheduleTime}>{item.time}</Text>
-                  <View style={[styles.scheduleItemContent, { borderLeftColor: getTypeColor(item.type) }]}>
-                    <Text style={styles.scheduleTitle}>{item.title}</Text>
-                    <Text style={styles.scheduleType}>{item.type}</Text>
-                  </View>
-                </Pressable>
-              ))
-            ) : (
-              <View style={[styles.scheduleItem, {justifyContent: 'center', paddingVertical: 20}]}>
-                <Text style={{color: colors.textMuted, textAlign: 'center', fontStyle: 'italic'}}>No events scheduled</Text>
-              </View>
-            )}
+        ))}
+      </View>
+      
+      <View style={{ flexDirection: 'row' }}>
+        {scheduleData.map((daySchedule, index) => (
+          <View key={daySchedule.day} style={[styles.dayRow, { flex: 1, marginHorizontal: 2 }]}>
+            <View style={styles.scheduleItems}>
+              {daySchedule.items.length > 0 ? (
+                daySchedule.items.map((item) => (
+                  <Pressable 
+                    key={item.id} 
+                    style={styles.scheduleItem}
+                    onLongPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      Alert.alert(
+                        'Schedule Item',
+                        `${item.title} at ${item.time}`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Delete', 
+                            style: 'destructive',
+                            onPress: () => deleteScheduleItem(item.id)
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <Text style={styles.scheduleTime}>{item.time}</Text>
+                    <View style={[styles.scheduleItemContent, { borderLeftColor: getTypeColor(item.type) }]}>
+                      <Text style={styles.scheduleTitle} numberOfLines={1} ellipsizeMode="tail">{item.title}</Text>
+                      <Text style={styles.scheduleType}>{item.type}</Text>
+                    </View>
+                  </Pressable>
+                ))
+              ) : (
+                <View style={[styles.scheduleItem, {justifyContent: 'center', paddingVertical: 10}]}>
+                  <Text style={{color: colors.textMuted, textAlign: 'center', fontStyle: 'italic', fontSize: 12}}>No events</Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </View>
+    </View>
   );
 });
 
@@ -926,16 +965,27 @@ const styles = StyleSheet.create({
       backgroundColor: colors.background,
     },
     manageButton: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 8,
-    },
-    manageButtonText: {
-      color: 'white',
-      fontWeight: '600',
-      fontSize: 14,
-    },
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  manageButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  addClassButton: {
+    backgroundColor: colors.chipSuccess,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addClassButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
     addStudentButton: {
       marginLeft: 12,
       backgroundColor: colors.background,
@@ -979,7 +1029,7 @@ const styles = StyleSheet.create({
       fontWeight: '500',
       color: colors.text,
     },
-    notificationBadge: {
+    profileNotificationBadge: {
       position: 'absolute',
       top: -5,
       right: -5,
@@ -990,7 +1040,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
-    notificationText: {
+    profileNotificationText: {
       color: '#FFFFFF',
       fontSize: 10,
       fontWeight: 'bold',
@@ -999,23 +1049,23 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   weeklySchedule: {
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
   },
   dayRow: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   dayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     backgroundColor: colors.surface,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 12,
+    marginBottom: 8,
     shadowColor: colors.cardShadow,
     shadowOpacity: 0.08,
     shadowRadius: 3,
@@ -1042,24 +1092,24 @@ const styles = StyleSheet.create({
   },
   scheduleItem: {
     backgroundColor: colors.surface,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 14,
-    marginBottom: 10,
+    padding: 10,
+    marginBottom: 8,
     shadowColor: colors.cardShadow,
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
     flexDirection: 'row',
     alignItems: 'center',
   },
   scheduleTime: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.textMuted,
     fontWeight: '600',
-    width: 80,
+    width: 60,
   },
   scheduleItemContent: {
     borderLeftWidth: 3,
@@ -1069,7 +1119,7 @@ const styles = StyleSheet.create({
   scheduleTitle: {
     fontWeight: '600',
     color: colors.text,
-    fontSize: 15,
+    fontSize: 14,
   },
   scheduleType: {
     fontSize: 12,
