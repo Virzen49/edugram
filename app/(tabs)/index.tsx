@@ -1,75 +1,138 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { Bell, Settings } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert } from 'react-native';
+import { Bell, Settings, User, LogOut } from 'lucide-react-native';
+import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useApp } from '@/contexts/AppContext';
 
 
 
 export default function HomeScreen() {
   const [profile, setProfile] = useState<any>();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const router = useRouter();
+  const { theme, t } = useApp();
 
-const getProfileData = async () => {
+  const getProfileData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        const response = await fetch(`http://10.103.211.237:3000/api/auth/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
+        console.log('Profile data:', data);
+        setProfile(data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
-try {
+  const handleLogout = () => {
+    Alert.alert(
+      t('logout'),
+      t('logoutConfirm'),
+      [
+        {
+          text: t('cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('logout'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Remove token from storage
+              await AsyncStorage.removeItem('token');
+              await AsyncStorage.removeItem('user');
+              // Navigate to login page
+              router.replace('/(auth)/login');
+            } catch (error) {
+              console.error('Error during logout:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
 
-const token = await AsyncStorage.getItem('token');
+  const handleProfilePress = () => {
+    setShowProfileMenu(false);
+    router.push('/profile');
+  };
 
-if (token) {
+  const handleSettingsPress = () => {
+    setShowProfileMenu(false);
+    router.push('/settings');
+  };
 
-const response = await fetch(`http://10.103.211.237:3000/api/auth/profile`, {
+  const handleNotificationsPress = () => {
+    setShowProfileMenu(false);
+    // Navigate to notifications page when implemented
+    console.log('Navigate to notifications');
+  };
 
-method: 'GET',
-
-headers: {
-
-'Authorization': `Bearer ${token}`,
-
-'Content-Type': 'application/json',
-
-},
-
-});
-
-const data = await response.json();
-
-console.log('Profile data:', data);
-
-setProfile(data.user);
-
-}
-
-} catch (error) {
-
-console.error('Error fetching profile:', error);
-
-}
-
-};
-
-useEffect(() => {
-
-getProfileData();
-
-}, []);
+  useEffect(() => {
+    getProfileData();
+  }, []);
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Home</Text>
-          <Text style={styles.welcomeText}>Welcome back, {profile?.email}!</Text>
+        <View style={styles.welcomeSection}>
+          <Text style={[styles.welcomeText, { color: theme.text }]}>{t('welcomeBack')} {profile?.email || 'User'}!</Text>
+          <Text style={[styles.gradeText, { color: theme.textSecondary }]}>Grade 10 • Delhi Public School</Text>
         </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Bell size={24} color="#6B7280" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Settings size={24} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => setShowProfileMenu(true)}
+        >
+          <Image 
+            source={{ uri: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400' }}
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
       </View>
 
+      {/* Profile Menu Modal */}
+      <Modal
+        visible={showProfileMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowProfileMenu(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          onPress={() => setShowProfileMenu(false)}
+        >
+          <View style={[styles.profileMenu, { backgroundColor: theme.surface }]}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleProfilePress}>
+              <User size={20} color={theme.text} />
+              <Text style={[styles.menuText, { color: theme.text }]}>{t('profile')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem} onPress={handleNotificationsPress}>
+              <Bell size={20} color={theme.text} />
+              <Text style={[styles.menuText, { color: theme.text }]}>{t('notifications')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem} onPress={handleSettingsPress}>
+              <Settings size={20} color={theme.text} />
+              <Text style={[styles.menuText, { color: theme.text }]}>{t('settings')}</Text>
+            </TouchableOpacity>
+            <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+            <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
+              <LogOut size={20} color="#DC2626" />
+              <Text style={[styles.menuText, styles.logoutText]}>{t('logout')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Activities</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('activities')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activitiesScroll}>
           <TouchableOpacity style={[styles.activityCard, { backgroundColor: '#10B981' }]}>
             <View style={styles.activityContent}>
@@ -87,40 +150,40 @@ getProfileData();
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subjects</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('subjects')}</Text>
         <View style={styles.subjectsGrid}>
-          <TouchableOpacity style={styles.subjectCard}>
-            <View style={styles.subjectIcon}>
+          <TouchableOpacity style={[styles.subjectCard, { backgroundColor: theme.surface }]}>
+            <View style={[styles.subjectIcon, { backgroundColor: theme.border }]}>
               <Text style={styles.subjectEmoji}>⚛️</Text>
             </View>
-            <Text style={styles.subjectName}>Chemistry</Text>
+            <Text style={[styles.subjectName, { color: theme.text }]}>{t('chemistry')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.subjectCard}>
-            <View style={styles.subjectIcon}>
+          <TouchableOpacity style={[styles.subjectCard, { backgroundColor: theme.surface }]}>
+            <View style={[styles.subjectIcon, { backgroundColor: theme.border }]}>
               <Text style={styles.subjectEmoji}>📐</Text>
             </View>
-            <Text style={styles.subjectName}>Mathematics</Text>
+            <Text style={[styles.subjectName, { color: theme.text }]}>{t('mathematics')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.subjectCard}>
-            <View style={styles.subjectIcon}>
+          <TouchableOpacity style={[styles.subjectCard, { backgroundColor: theme.surface }]}>
+            <View style={[styles.subjectIcon, { backgroundColor: theme.border }]}>
               <Text style={styles.subjectEmoji}>⚗️</Text>
             </View>
-            <Text style={styles.subjectName}>Physics</Text>
+            <Text style={[styles.subjectName, { color: theme.text }]}>{t('physics')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.subjectCard}>
-            <View style={styles.subjectIcon}>
+          <TouchableOpacity style={[styles.subjectCard, { backgroundColor: theme.surface }]}>
+            <View style={[styles.subjectIcon, { backgroundColor: theme.border }]}>
               <Text style={styles.subjectEmoji}>💻</Text>
             </View>
-            <Text style={styles.subjectName}>Computer Science</Text>
+            <Text style={[styles.subjectName, { color: theme.text }]}>{t('computerScience')}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.progressSection}>
-        <View style={styles.progressCard}>
-          <Text style={styles.progressTitle}>XP & Leaderboard</Text>
-          <Text style={styles.progressSubtitle}>Level 5</Text>
-          <Text style={styles.progressXP}>1200 XP | Rank 12 in Class</Text>
+        <View style={[styles.progressCard, { backgroundColor: theme.warning }]}>
+          <Text style={[styles.progressTitle, { color: '#92400E' }]}>{t('xpLeaderboard')}</Text>
+          <Text style={[styles.progressSubtitle, { color: '#92400E' }]}>{t('level')} 5</Text>
+          <Text style={[styles.progressXP, { color: '#A16207' }]}>1200 XP | {t('rankInClass', { rank: '12' })}</Text>
         </View>
       </View>
     </ScrollView>
@@ -135,26 +198,76 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 20,
     paddingTop: 60,
   },
-  greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
+  welcomeSection: {
+    flex: 1,
   },
   welcomeText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  gradeText: {
     fontSize: 16,
     color: '#6B7280',
-    marginTop: 4,
+    marginBottom: 8,
   },
-  headerIcons: {
+  profileButton: {
+    marginLeft: 16,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#22C55E',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 110,
+    paddingRight: 20,
+  },
+  profileMenu: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuItem: {
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 12,
   },
-  iconButton: {
-    padding: 8,
+  menuText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 4,
+  },
+  logoutItem: {
+    paddingVertical: 12,
+  },
+  logoutText: {
+    color: '#DC2626',
+    fontWeight: '600',
   },
   section: {
     paddingHorizontal: 20,
