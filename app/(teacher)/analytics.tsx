@@ -267,13 +267,13 @@ const CustomHorizontalBarChart = ({ data, width, height, onPress }: {
         </Defs>
         
         {data.map((item, index) => {
-          const barWidth = (item.averageScore / maxValue) * (width - 120);
+          const barWidth = (item.averageScore / maxValue) * (width - 100);
           const y = 20 + index * (barHeight + 10);
           
           return (
             <G key={index}>
               <Rect
-                x="80"
+                x="60"
                 y={y}
                 width={barWidth}
                 height={barHeight - 5}
@@ -281,7 +281,7 @@ const CustomHorizontalBarChart = ({ data, width, height, onPress }: {
                 rx="4"
               />
               <SvgText
-                x="75"
+                x="55"
                 y={y + barHeight/2 + 3}
                 fontSize="10"
                 fill={pastelColors.text}
@@ -290,7 +290,7 @@ const CustomHorizontalBarChart = ({ data, width, height, onPress }: {
                 {item.className}
               </SvgText>
               <SvgText
-                x={80 + barWidth + 5}
+                x={60 + barWidth + 5}
                 y={y + barHeight/2 + 3}
                 fontSize="10"
                 fill={pastelColors.text}
@@ -299,7 +299,7 @@ const CustomHorizontalBarChart = ({ data, width, height, onPress }: {
                 {item.averageScore}%
               </SvgText>
               <SvgText
-                x={80 + barWidth + 5}
+                x={60 + barWidth + 5}
                 y={y + barHeight/2 + 15}
                 fontSize="8"
                 fill={pastelColors.muted}
@@ -392,7 +392,7 @@ export default function TeacherAnalyticsScreen() {
         />
       </View>
 
-      {/* Defaulters Section */}
+      {/* Students Needing Attention */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Students Needing Attention</Text>
         <View style={styles.defaultersRow}>
@@ -401,29 +401,26 @@ export default function TeacherAnalyticsScreen() {
             <Text style={styles.defaultersLabel}>Students</Text>
           </View>
           <View style={styles.defaultersList}>
-            <FlatList
-              data={analyticsData.defaulters}
-              keyExtractor={(item, idx) => item.name + idx}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={styles.defaulterItem}
-                  onPress={() => setSelectedStudent({ ...item, type: 'defaulter' })}
-                >
-                  <View style={styles.defaulterInfo}>
-                    <Text style={styles.defaulterName}>{item.name}</Text>
-                    <Text style={styles.defaulterClass}>{item.class}</Text>
-                  </View>
-                  <View style={styles.scoreContainer}>
-                    <Text style={styles.scoreText}>{item.score}%</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
+            {analyticsData.defaulters.map((item, idx) => (
+              <TouchableOpacity 
+                key={item.name + idx}
+                style={styles.defaulterItem}
+                onPress={() => setSelectedStudent({ ...item, type: 'defaulter' })}
+              >
+                <View style={styles.defaulterInfo}>
+                  <Text style={styles.defaulterName}>{item.name}</Text>
+                  <Text style={styles.defaulterClass}>{item.class}</Text>
+                </View>
+                <View style={styles.scoreContainer}>
+                  <Text style={styles.scoreText}>{item.score}%</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>
 
-      {/* Top Scorers */}
+      {/* Top Performers */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Top Performers</Text>
         <View style={styles.topScorersContainer}>
