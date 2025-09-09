@@ -13,7 +13,6 @@ export const colors = {
   chipWarn: '#FFC107',
   chipInfo: '#3B82F6',
   chipDanger: '#DC3545',
-  lightBackground: '#F1F5F9', // Added for addStudentButton style
   funPalette: ['#FDE68A', '#A7F3D0', '#BFDBFE', '#C7D2FE', '#FBCFE8', '#FECACA'],
 };
 

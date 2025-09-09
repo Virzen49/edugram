@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function ClassDetailsScreen() {
   const { id, title, students: count } = useLocalSearchParams<{ id: string; title?: string; students?: string }>();
   const router = useRouter();
-  const [students, setStudents] = useState<Array<{id: string; name: string; badges: string[]; rollNo?: string}>>([]);
+  const [students, setStudents] = useState<Array<{id: string; name: string; badges: string[]}>>([]);
   const [tab, setTab] = useState<'Roster'|'Lessons'|'Messages'>('Roster');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -153,6 +153,7 @@ export default function ClassDetailsScreen() {
           <Text style={styles.subtleHeader}>{`${students.length} Students`}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <View style={styles.syncPill}><MaterialCommunityIcons name="cloud-check" size={16} color={colors.text} /><Text style={styles.syncText}>online</Text></View>
           <Pressable style={styles.startBtn} accessibilityRole="button" accessibilityLabel="Start Session" onPress={()=>alert('Starting today\'s session…')}><Text style={styles.startText}>Start Session</Text></Pressable>
         </View>
       </View>
@@ -196,7 +197,7 @@ export default function ClassDetailsScreen() {
                             const newStudent = {
                               id: Date.now().toString(),
                               name,
-                              rollNo: rollNo || '',
+                              rollNo,
                               badges: []
                             };
                             
@@ -320,37 +321,7 @@ export default function ClassDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  rosterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  rosterTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  addButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  addButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  rollNo: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subtleHeader: { color: colors.textMuted },

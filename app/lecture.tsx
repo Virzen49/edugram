@@ -49,7 +49,7 @@ export default function LectureScreen() {
         </Text>
         <View style={styles.progressBarBackground}>
           <View
-            style={[styles.progressBarFill, { width: `${(lectureData.progress / lectureData.total) * 100}%` }]}
+            style={[styles.progressBarFill, { width: `${lectureData.progress > 0 ? (lectureData.progress / lectureData.total) * 100 : 0}%` }]}
           />
         </View>
       </View>

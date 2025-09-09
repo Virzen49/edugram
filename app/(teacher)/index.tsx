@@ -231,8 +231,8 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
 
   return (
     <ScrollView 
-      style={styles.container} 
-      contentContainerStyle={styles.content} 
+      style={{ flex: 1, backgroundColor: colors.background }} 
+      contentContainerStyle={{ padding: 20, paddingTop: 28 }} 
       showsVerticalScrollIndicator={false}
       onStartShouldSetResponder={() => true}
       onResponderRelease={handleContentPress}>
@@ -337,8 +337,10 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
             </Animated.View>
             )}
         </View>
-      </View>
+      {/* </View>
+    </ScrollView>
 
+    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
       {/* Quick Actions section removed as requested */}
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -457,17 +459,19 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
       {/* Discover Content section removed as requested */}
       {/* Analytics Snapshot */}
       <Text style={styles.sectionTitle}>Analytics Snapshot</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ paddingRight: 8 }}>
-        <Pressable onPress={() => Alert.alert('Literacy Analytics', 'View detailed literacy performance across all classes.')}>
-          <MetricCard icon="book-open-page-variant" label="Literacy" value={72} color={colors.chipSuccess} />
-        </Pressable>
-        <Pressable onPress={() => Alert.alert('Numeracy Analytics', 'Track numeracy skills and identify areas for improvement.')}>
-          <MetricCard icon="abacus" label="Numeracy" value={64} color={colors.primary} />
-        </Pressable>
-        <Pressable onPress={() => Alert.alert('Participation Analytics', 'Monitor student engagement and participation metrics.')}>
-          <MetricCard icon="drama-masks" label="Participation" value={81} color={colors.chipInfo} />
-        </Pressable>
-      </ScrollView>
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ paddingRight: 8 }}>
+          <Pressable onPress={() => Alert.alert('Literacy Analytics', 'View detailed literacy performance across all classes.')}>
+            <MetricCard icon="book-open-page-variant" label="Literacy" value={72} color={colors.chipSuccess} />
+          </Pressable>
+          <Pressable onPress={() => Alert.alert('Numeracy Analytics', 'Track numeracy skills and identify areas for improvement.')}>
+            <MetricCard icon="abacus" label="Numeracy" value={64} color={colors.primary} />
+          </Pressable>
+          <Pressable onPress={() => Alert.alert('Participation Analytics', 'Monitor student engagement and participation metrics.')}>
+            <MetricCard icon="drama-masks" label="Participation" value={81} color={colors.chipInfo} />
+          </Pressable>
+        </ScrollView>
+      </View>
 
       {/* Weekly Schedule - Vertical Scroll */}
       <View style={{marginBottom: 16}}>
@@ -531,19 +535,20 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
       {/* FAB */}
       <View style={{ height: 80 }} />
 
-      
-      <Pressable style={styles.fab} accessibilityRole="button" accessibilityLabel="Create" onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowFabMenu(true); }}>
-        <MaterialCommunityIcons name="plus" size={26} color="#FFFFFF" />
-      </Pressable>
-      <Modal visible={showFabMenu} transparent animationType="fade" onRequestClose={() => setShowFabMenu(false)}>
-        <Pressable style={styles.overlay} onPress={() => setShowFabMenu(false)}>
-          <View style={styles.sheet}>
-            <SheetItem icon="account-plus" label="Add Student" onPress={async () => { await Haptics.selectionAsync(); navigateAndClose('/(teacher)/classes'); }} />
-            <SheetItem icon="file-plus" label="Create Activity" onPress={async () => { await Haptics.selectionAsync(); navigateAndClose('/(teacher)/content'); }} />
-            <SheetItem icon="alert-circle-outline" label="Report Issue" onPress={async () => { await Haptics.selectionAsync(); navigateAndClose('/(teacher)/settings'); }} />
-          </View>
+      <View>
+        <Pressable style={styles.fab} accessibilityRole="button" accessibilityLabel="Create" onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowFabMenu(true); }}>
+          <MaterialCommunityIcons name="plus" size={26} color="#FFFFFF" />
         </Pressable>
-      </Modal>
+        <Modal visible={showFabMenu} transparent animationType="fade" onRequestClose={() => setShowFabMenu(false)}>
+          <Pressable style={styles.overlay} onPress={() => setShowFabMenu(false)}>
+            <View style={styles.sheet}>
+              <SheetItem icon="account-plus" label="Add Student" onPress={async () => { await Haptics.selectionAsync(); navigateAndClose('/(teacher)/classes'); }} />
+              <SheetItem icon="file-plus" label="Create Activity" onPress={async () => { await Haptics.selectionAsync(); navigateAndClose('/(teacher)/content'); }} />
+              <SheetItem icon="alert-circle-outline" label="Report Issue" onPress={async () => { await Haptics.selectionAsync(); navigateAndClose('/(teacher)/settings'); }} />
+            </View>
+          </Pressable>
+        </Modal>
+      </View> */}
     </ScrollView>
   );
 }
@@ -933,7 +938,7 @@ const styles = StyleSheet.create({
     },
     addStudentButton: {
       marginLeft: 12,
-      backgroundColor: colors.lightBackground,
+      backgroundColor: colors.background,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 6,
