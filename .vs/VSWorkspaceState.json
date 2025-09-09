@@ -1,7 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\app",
+    "\\app\\(auth)",
+    "\\assets",
+    "\\assets\\images",
+    "\\components",
+    "\\hooks"
   ],
-  "SelectedNode": "\\C:\\Users\\Admin\\Source\\Repos\\SIHedugram",
   "PreviewInSolutionExplorer": false
 }
