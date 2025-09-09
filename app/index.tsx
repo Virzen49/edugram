@@ -1,58 +1,85 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SplashScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // Simulate splash screen delay
+    // Splash screen delay - 3 seconds then go to login
     const timer = setTimeout(() => {
-      router.replace('/(auth)/welcome');
-    }, 2000);
+      router.replace('/(auth)/login');
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#E5E7EB', '#9CA3AF', '#6B7280']}
+      style={styles.container}
+    >
       <View style={styles.content}>
+        {/* Glowing sun effect - outer glow */}
+        <View style={styles.glowOuter} />
+        {/* Glowing sun effect - middle glow */}
+        <View style={styles.glowMiddle} />
+        {/* Glowing sun effect - inner glow */}
+        <View style={styles.glowInner} />
+        
+        {/* EduGram text with shadow */}
         <Text style={styles.logo}>EduGram</Text>
-        <View style={styles.loadingDots}>
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-        </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
     alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  glowOuter: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: '#FEF3C7',
+    opacity: 0.3,
+    zIndex: 1,
+  },
+  glowMiddle: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#FDE68A',
+    opacity: 0.4,
+    zIndex: 2,
+  },
+  glowInner: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#FCD34D',
+    opacity: 0.5,
+    zIndex: 3,
   },
   logo: {
-    fontSize: 48,
+    fontSize: 56,
     fontWeight: 'bold',
-    color: '#E91E63',
-    marginBottom: 40,
-  },
-  loadingDots: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E91E63',
-    opacity: 0.6,
+    color: '#22C55E',
+    zIndex: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
 });

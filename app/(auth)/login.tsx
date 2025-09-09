@@ -1,49 +1,84 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = async () => {
-    if (isSubmitting) return;
-    setErrorMessage('');
+const [email, setEmail] = useState('');
 
-    const loginData = {
-      email: email,
-      password: password,
-    };
+const [password, setPassword] = useState('');
 
-    try {
-      setIsSubmitting(true);
-      const response = await fetch('http://110.0.5.255:3000/api/auth/userlogin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
-      });
+const [isSubmitting, setIsSubmitting] = useState(false);
 
-      const result = await response.json().catch(() => ({}));
+const [errorMessage, setErrorMessage] = useState('');
 
-      if (response.ok) {
-        // Optionally store token/user
-        // e.g., await SecureStore.setItemAsync('token', result.token)
-        router.replace('/(tabs)');
-      } else {
-        const message = (result && (result.message || result.error)) || 'Login failed. Please try again.';
-        setErrorMessage(message);
-      }
-    } catch (error: unknown) {
-      setErrorMessage('Unable to reach server. Check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+const handleLogin = async () => {
+
+if (isSubmitting) return;
+
+setErrorMessage('');
+
+const loginData = {
+
+email: email,
+
+password: password,
+
+};
+
+try {
+
+setIsSubmitting(true);
+
+const response = await fetch('http://10.103.211.237:3000/api/auth/userlogin', {
+
+method: 'POST',
+
+headers: {
+
+'Content-Type': 'application/json',
+
+},
+
+body: JSON.stringify(loginData),
+
+});
+
+const result = await response.json().catch(() => ({}));
+
+if (response.ok) {
+
+// Optionally store token/user
+
+// e.g., await SecureStore.setItemAsync('token', result.token)
+
+// await SecureStore.setItemAsync('token' , result.token);
+
+await AsyncStorage.setItem('token', result.token);
+
+router.replace('/(tabs)');
+
+} else {
+
+const message = (result && (result.message || result.error)) || 'Login failed. Please try again.';
+
+setErrorMessage(message);
+
+}
+
+} catch (error: unknown) {
+
+setErrorMessage('Unable to reach server. Check your connection and try again.');
+
+} finally {
+
+setIsSubmitting(false);
+
+}
+
+};
 
   return (
     <KeyboardAvoidingView 
@@ -51,7 +86,9 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
+        <Text style={styles.logo}>EduGram</Text>
         <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Learn.Play.Achieve</Text>
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
@@ -99,6 +136,7 @@ export default function LoginScreen() {
           </View>
           
           <TouchableOpacity style={styles.googleButton}>
+            <Text style={styles.googleIcon}>G</Text>
             <Text style={styles.googleButtonText}>Login with Google</Text>
           </TouchableOpacity>
           
@@ -121,10 +159,23 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
   },
+  logo: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#22C55E',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#6B7280',
     textAlign: 'center',
     marginBottom: 40,
   },
@@ -148,15 +199,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 25,
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   loginButton: {
-    backgroundColor: '#E91E63',
+    backgroundColor: '#22C55E',
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 25,
     alignItems: 'center',
     marginTop: 10,
   },
@@ -191,10 +242,18 @@ const styles = StyleSheet.create({
   googleButton: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 25,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  googleIcon: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4285F4',
   },
   googleButtonText: {
     color: '#374151',
@@ -204,7 +263,7 @@ const styles = StyleSheet.create({
   schoolButton: {
     backgroundColor: '#3B82F6',
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 25,
     alignItems: 'center',
   },
   schoolButtonText: {

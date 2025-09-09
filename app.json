@@ -8,6 +8,7 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "initialRouteName": "index",
     "ios": {
       "supportsTablet": true
     },
@@ -19,6 +20,28 @@
     "plugins": ["expo-router", "expo-font", "expo-web-browser"],
     "experiments": {
       "typedRoutes": true
+    },
+    "linking": {
+      "prefixes": ["myapp://"],
+      "config": {
+        "screens": {
+          "index": "/",
+          "(auth)": {
+            "screens": {
+              "login": "/login",
+              "register": "/register"
+            }
+          },
+          "(tabs)": {
+            "screens": {
+              "index": "/home",
+              "courses": "/courses",
+              "profile": "/profile",
+              "leaderboard": "/leaderboard"
+            }
+          }
+        }
+      }
     }
   }
 }
