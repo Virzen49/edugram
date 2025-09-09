@@ -30,7 +30,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={[styles.activityCard, { backgroundColor: '#059669' }]}>
             <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>Algebra Quiz</Text>
+              <Text style={styles.activityTitle}>Algebra Practice Quiz</Text>
               <Text style={styles.activitySubject}>Mathematics</Text>
             </View>
           </TouchableOpacity>
