@@ -1,8 +1,9 @@
 // course.tsx
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useRef, useEffect } from 'react';
 import { router } from 'expo-router';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, PlayCircle } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, CheckCircle, Circle, PlayCircle, BookOpen, Award, Zap, Star } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCategory, getModules, getLectures } from "../api/course" // import new api funcs
@@ -372,6 +373,36 @@ export default function CoursesScreen() {
     Animated.timing(animatedValue, { toValue: 1, duration: 300, useNativeDriver: false }).start();
   };
 
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('math') || name.includes('algebra') || name.includes('geometry')) {
+      return { icon: '🧮', color: '#8B5CF6', bgColor: '#8B5CF620' };
+    } else if (name.includes('science') || name.includes('chemistry') || name.includes('physics')) {
+      return { icon: '🧪', color: '#10B981', bgColor: '#10B98120' };
+    } else if (name.includes('english') || name.includes('language') || name.includes('literature')) {
+      return { icon: '📚', color: '#3B82F6', bgColor: '#3B82F620' };
+    } else if (name.includes('history') || name.includes('social')) {
+      return { icon: '🏛️', color: '#F59E0B', bgColor: '#F59E0B20' };
+    } else if (name.includes('art') || name.includes('music')) {
+      return { icon: '🎨', color: '#EF4444', bgColor: '#EF444420' };
+    }
+    return { icon: '📘', color: '#6B7280', bgColor: '#6B728020' };
+  };
+
+  const getModuleIcon = (moduleName: string) => {
+    const name = moduleName.toLowerCase();
+    if (name.includes('algebra') || name.includes('equation')) {
+      return { icon: '➕', color: '#8B5CF6' };
+    } else if (name.includes('geometry') || name.includes('shape')) {
+      return { icon: '📐', color: '#3B82F6' };
+    } else if (name.includes('chemistry') || name.includes('element')) {
+      return { icon: '⚗️', color: '#10B981' };
+    } else if (name.includes('physics') || name.includes('force')) {
+      return { icon: '⚡', color: '#F59E0B' };
+    }
+    return { icon: '📖', color: '#6B7280' };
+  };
+
   const navigateToLesson = (lesson: any, categoryId: string | number, moduleId: string | number) => {
     // If this is a quiz, go to quiz screen (existing behavior)
     if (lesson.type === 'quiz') {
@@ -402,22 +433,45 @@ export default function CoursesScreen() {
   }
 
   return (
-  <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-    <View style={styles.header}>
-      <Text style={[styles.title, { color: theme.text }]}>{t('courses')}</Text>
-    </View>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Enhanced Header */}
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
+        <View style={styles.headerContent}>
+          <Text style={[styles.title, { color: theme.text }]}>{t('courses')}</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Learn and grow with interactive content</Text>
+        </View>
+        <View style={styles.headerStats}>
+          <View style={[styles.statCard, { backgroundColor: theme.primary + '15' }]}>
+            <Award size={16} color={theme.primary} />
+            <Text style={[styles.statNumber, { color: theme.primary }]}>{categories.length}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Subjects</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#10B981' + '15' }]}>
+            <Zap size={16} color={'#10B981'} />
+            <Text style={[styles.statNumber, { color: '#10B981' }]}>
+              {categories.reduce((total, cat) => total + cat.subjects.length, 0)}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Modules</Text>
+          </View>
+        </View>
+      </View>
 
     {categories.map((category, categoryIndex) => {
       const isCategoryExpanded = expandedSubject === String(category.id);
       const categoryAnimatedValue = getAnimatedValue(`subject-${category.id}`);
+      const categoryStyle = getCategoryIcon(category.name);
 
       return (
         <View key={categoryIndex} style={styles.categorySection}>
-          {/* Category Card */}
+          {/* Enhanced Category Card */}
           <TouchableOpacity
             style={[
               styles.subjectCard,
-              { backgroundColor: theme.surface, borderColor: '#3B82F6' },
+              { 
+                backgroundColor: theme.surface, 
+                borderColor: categoryStyle.color,
+                shadowColor: categoryStyle.color,
+              },
             ]}
             onPress={() => toggleSubject(String(category.id), category.id)}
           >
@@ -425,25 +479,29 @@ export default function CoursesScreen() {
               <View
                 style={[
                   styles.subjectIcon,
-                  { backgroundColor: '#3B82F620' },
+                  { backgroundColor: categoryStyle.bgColor },
                 ]}
               >
-                <Text style={styles.subjectEmoji}>📘</Text>
+                <Text style={styles.subjectEmoji}>{categoryStyle.icon}</Text>
               </View>
               <View style={styles.subjectInfo}>
                 <Text style={[styles.subjectName, { color: theme.text }]}>
                   {category.name}
                 </Text>
-                <Text style={[styles.subjectModules, { color: theme.textSecondary }]}>
-                  {category.subjects.length} module
-                  {category.subjects.length !== 1 ? 's' : ''}
-                </Text>
+                <View style={styles.subjectMeta}>
+                  <BookOpen size={14} color={theme.textSecondary} />
+                  <Text style={[styles.subjectModules, { color: theme.textSecondary }]}>
+                    {category.subjects.length} module{category.subjects.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
               </View>
-              {isCategoryExpanded ? (
-                <ChevronDown size={20} color={theme.textSecondary} />
-              ) : (
-                <ChevronRight size={20} color={theme.textSecondary} />
-              )}
+              <View style={[styles.expandButton, { backgroundColor: categoryStyle.bgColor }]}>
+                {isCategoryExpanded ? (
+                  <ChevronDown size={20} color={categoryStyle.color} />
+                ) : (
+                  <ChevronRight size={20} color={categoryStyle.color} />
+                )}
+              </View>
             </View>
           </TouchableOpacity>
 
@@ -463,6 +521,7 @@ export default function CoursesScreen() {
             {category.subjects.map((module: any, moduleIndex: number) => {
               const isModuleExpanded = expandedModule === String(module.id);
               const moduleAnimatedValue = getAnimatedValue(`module-${module.id}`);
+              const moduleStyle = getModuleIcon(module.name);
 
               // Calculate progress based on lesson completions with new key format
               const moduleStats = {
@@ -494,33 +553,49 @@ export default function CoursesScreen() {
                   style={[styles.moduleContainer, { backgroundColor: theme.background }]}
                 >
                   <TouchableOpacity
-                    style={[styles.moduleCard, { backgroundColor: theme.surface }]}
+                    style={[
+                      styles.moduleCard, 
+                      { 
+                        backgroundColor: theme.surface,
+                        borderLeftWidth: 4,
+                        borderLeftColor: moduleStyle.color,
+                      }
+                    ]}
                     onPress={() => toggleModule(String(module.id), category.id)}
                   >
                     <View style={styles.moduleHeader}>
+                      <View style={[styles.moduleIcon, { backgroundColor: moduleStyle.color + '15' }]}>
+                        <Text style={[styles.moduleEmoji, { color: moduleStyle.color }]}>{moduleStyle.icon}</Text>
+                      </View>
                       <View style={styles.moduleInfo}>
                         <Text style={[styles.moduleName, { color: theme.text }]}>
                           {module.name}
                         </Text>
-                        <Text
-                          style={[styles.moduleProgress, { color: theme.textSecondary }]}
-                        >
-                          {moduleStats.progress}/{moduleStats.total} lessons
-                        </Text>
+                        <View style={styles.moduleStats}>
+                          <View style={styles.progressInfo}>
+                            <Star size={12} color={moduleStyle.color} />
+                            <Text style={[styles.moduleProgress, { color: theme.textSecondary }]}>
+                              {moduleStats.progress}/{moduleStats.total} completed
+                            </Text>
+                          </View>
+                          <Text style={[styles.progressPercent, { color: moduleStyle.color }]}>
+                            {Math.round(progressPercentage)}%
+                          </Text>
+                        </View>
                       </View>
-                      {isModuleExpanded ? (
-                        <ChevronDown size={16} color={theme.textSecondary} />
-                      ) : (
-                        <ChevronRight size={16} color={theme.textSecondary} />
-                      )}
+                      <View style={[styles.expandButtonSmall, { backgroundColor: moduleStyle.color + '15' }]}>
+                        {isModuleExpanded ? (
+                          <ChevronDown size={16} color={moduleStyle.color} />
+                        ) : (
+                          <ChevronRight size={16} color={moduleStyle.color} />
+                        )}
+                      </View>
                     </View>
-                    <View
-                      style={[styles.progressBar, { backgroundColor: theme.border }]}
-                    >
+                    <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
                       <View
                         style={[
                           styles.progressFill,
-                          { width: `${progressPercentage}%`, backgroundColor: '#3B82F6' },
+                          { width: `${progressPercentage}%`, backgroundColor: moduleStyle.color },
                         ]}
                       />
                     </View>
@@ -542,10 +617,20 @@ export default function CoursesScreen() {
                     {module.lessons && module.lessons.length > 0 ? (
                       module.lessons.map((lesson: any, lessonIndex: number) => {
                         const isCompleted = completedLessons.includes(lesson.id);
+                        const lessonTypeColor = lesson.type === 'quiz' ? '#8B5CF6' : lesson.type === 'lesson' ? '#3B82F6' : '#10B981';
+                        const lessonIcon = lesson.type === 'quiz' ? '🧩' : lesson.type === 'lesson' ? '▶️' : '📝';
+                        
                         return (
                           <TouchableOpacity
                             key={lessonIndex}
-                            style={[styles.lessonItem, { backgroundColor: theme.surface }]}
+                            style={[
+                              styles.lessonItem, 
+                              { 
+                                backgroundColor: theme.surface,
+                                borderLeftWidth: 4,
+                                borderLeftColor: isCompleted ? '#10B981' : lessonTypeColor,
+                              }
+                            ]}
                             onPress={() =>
                               navigateToLesson(
                                 lesson,
@@ -555,25 +640,39 @@ export default function CoursesScreen() {
                             }
                           >
                             <View style={styles.lessonContent}>
-                              <View style={styles.lessonIcon}>
-                                {isCompleted ? (
-                                  <CheckCircle size={16} color={'#3B82F6'} />
-                                ) : lesson.type === 'quiz' ? (
-                                  <Circle size={16} color={theme.textSecondary} />
-                                ) : (
-                                  <PlayCircle size={16} color={theme.textSecondary} />
-                                )}
+                              <View style={[
+                                styles.lessonIconContainer,
+                                { backgroundColor: (isCompleted ? '#10B981' : lessonTypeColor) + '15' }
+                              ]}>
+                                <Text style={styles.lessonEmoji}>{lessonIcon}</Text>
                               </View>
                               <View style={styles.lessonInfo}>
                                 <Text style={[styles.lessonName, { color: theme.text }]}>
                                   {lesson.name}
                                 </Text>
-                                <Text
-                                  style={[styles.lessonType, { color: theme.textSecondary }]}
-                                >
-                                  {lesson.type}
-                                  {isCompleted && ' • Completed'}
-                                </Text>
+                                <View style={styles.lessonMeta}>
+                                  <Text style={[styles.lessonType, { color: theme.textSecondary }]}>
+                                    {lesson.type === 'lesson' ? 'Video Lesson' : lesson.type === 'quiz' ? 'Interactive Quiz' : 'Study Notes'}
+                                  </Text>
+                                  {isCompleted && (
+                                    <View style={styles.completedBadge}>
+                                      <CheckCircle size={12} color={'#10B981'} />
+                                      <Text style={[styles.completedText, { color: '#10B981' }]}>Completed</Text>
+                                    </View>
+                                  )}
+                                </View>
+                              </View>
+                              <View style={[
+                                styles.lessonAction,
+                                { backgroundColor: (isCompleted ? '#10B981' : lessonTypeColor) + '15' }
+                              ]}>
+                                {isCompleted ? (
+                                  <CheckCircle size={16} color={'#10B981'} />
+                                ) : lesson.type === 'quiz' ? (
+                                  <Text style={[styles.actionText, { color: lessonTypeColor }]}>Start</Text>
+                                ) : (
+                                  <PlayCircle size={16} color={lessonTypeColor} />
+                                )}
                               </View>
                             </View>
                           </TouchableOpacity>
@@ -601,32 +700,248 @@ export default function CoursesScreen() {
 // keep your styles unchanged (copy from your original file)
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { padding: 20, paddingTop: 60 },
-  title: { fontSize: 28, fontWeight: 'bold' },
-  categorySection: { paddingHorizontal: 20, marginBottom: 30 },
-  categoryTitle: { fontSize: 20, fontWeight: '600', marginBottom: 16 },
-  subjectContainer: { marginBottom: 16 },
-  subjectCard: { borderRadius: 12, padding: 16, borderWidth: 2, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  subjectHeader: { flexDirection: 'row', alignItems: 'center' },
-  subjectIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  subjectEmoji: { fontSize: 24 },
-  subjectInfo: { flex: 1 },
-  subjectName: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
-  subjectModules: { fontSize: 12 },
-  modulesContainer: { overflow: 'hidden', marginTop: 8 },
-  moduleContainer: { marginBottom: 8, borderRadius: 8, paddingHorizontal: 8 },
-  moduleCard: { borderRadius: 8, padding: 12, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
-  moduleHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  moduleInfo: { flex: 1 },
-  moduleName: { fontSize: 14, fontWeight: '500', marginBottom: 2 },
-  moduleProgress: { fontSize: 11 },
-  progressBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 2 },
-  lessonsContainer: { overflow: 'hidden', marginTop: 8, paddingLeft: 8 },
-  lessonItem: { borderRadius: 6, marginBottom: 4, paddingVertical: 8, paddingHorizontal: 12, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 1 },
-  lessonContent: { flexDirection: 'row', alignItems: 'center' },
-  lessonIcon: { marginRight: 10 },
-  lessonInfo: { flex: 1 },
-  lessonName: { fontSize: 13, fontWeight: '500', marginBottom: 1 },
-  lessonType: { fontSize: 10 },
+  header: { 
+    paddingHorizontal: 20, 
+    paddingTop: 60, 
+    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerContent: {
+    marginBottom: 20,
+  },
+  title: { 
+    fontSize: 32, 
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    opacity: 0.8,
+  },
+  headerStats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  statCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    gap: 8,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  categorySection: { 
+    paddingHorizontal: 20, 
+    marginBottom: 24 
+  },
+  subjectCard: { 
+    borderRadius: 20, 
+    padding: 20, 
+    borderWidth: 2, 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 8,
+  },
+  subjectHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  subjectIcon: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 28, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginRight: 16 
+  },
+  subjectEmoji: { 
+    fontSize: 28 
+  },
+  subjectInfo: { 
+    flex: 1 
+  },
+  subjectName: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    marginBottom: 4 
+  },
+  subjectMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  subjectModules: { 
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  expandButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modulesContainer: { 
+    overflow: 'hidden', 
+    marginTop: 12 
+  },
+  moduleContainer: { 
+    marginBottom: 12, 
+    borderRadius: 16, 
+    paddingHorizontal: 8 
+  },
+  moduleCard: { 
+    borderRadius: 16, 
+    padding: 16, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.08, 
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  moduleHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
+  moduleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  moduleEmoji: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  moduleInfo: { 
+    flex: 1 
+  },
+  moduleName: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    marginBottom: 6 
+  },
+  moduleStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  moduleProgress: { 
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  progressPercent: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  expandButtonSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressBar: { 
+    height: 6, 
+    borderRadius: 3, 
+    overflow: 'hidden' 
+  },
+  progressFill: { 
+    height: '100%', 
+    borderRadius: 3 
+  },
+  lessonsContainer: { 
+    overflow: 'hidden', 
+    marginTop: 12, 
+    paddingLeft: 8 
+  },
+  lessonItem: { 
+    borderRadius: 12, 
+    marginBottom: 8, 
+    paddingVertical: 12, 
+    paddingHorizontal: 16, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  lessonContent: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  lessonIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  lessonEmoji: {
+    fontSize: 16,
+  },
+  lessonIcon: { 
+    marginRight: 12 
+  },
+  lessonInfo: { 
+    flex: 1 
+  },
+  lessonName: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginBottom: 4 
+  },
+  lessonMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lessonType: { 
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  completedText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  lessonAction: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
 });

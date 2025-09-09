@@ -255,31 +255,50 @@ export default function HomeScreen() {
             </Text>
             
             <View style={styles.subjectOptionsGrid}>
-              <TouchableOpacity 
-                style={[styles.subjectOption, { backgroundColor: theme.background }]}
-                onPress={() => handleSubjectSelection('chemistry')}
-              >
-                <View style={[styles.subjectOptionIcon, { backgroundColor: '#10B98120' }]}>
-                  <Text style={styles.subjectOptionEmoji}>⚛️</Text>
-                </View>
-                <Text style={[styles.subjectOptionName, { color: theme.text }]}>Chemistry</Text>
-                <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
-                  {selectedGame === 'hangman' ? 'Chemical terms' : 'Chemistry facts'}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.subjectOption, { backgroundColor: theme.background }]}
-                onPress={() => handleSubjectSelection('mathematics')}
-              >
-                <View style={[styles.subjectOptionIcon, { backgroundColor: '#3B82F620' }]}>
-                  <Text style={styles.subjectOptionEmoji}>📐</Text>
-                </View>
-                <Text style={[styles.subjectOptionName, { color: theme.text }]}>Mathematics</Text>
-                <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
-                  {selectedGame === 'hangman' ? 'Math terms' : 'Number puzzles'}
-                </Text>
-              </TouchableOpacity>
+              {selectedGame === 'hangman' ? (
+                // Only Chemistry for Hangman
+                <TouchableOpacity 
+                  style={[styles.subjectOption, { backgroundColor: theme.background }]}
+                  onPress={() => handleSubjectSelection('chemistry')}
+                >
+                  <View style={[styles.subjectOptionIcon, { backgroundColor: '#10B98120' }]}>
+                    <Text style={styles.subjectOptionEmoji}>⚛️</Text>
+                  </View>
+                  <Text style={[styles.subjectOptionName, { color: theme.text }]}>Chemistry</Text>
+                  <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
+                    Chemical terms and vocabulary
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                // Both subjects for Sudoku
+                <>
+                  <TouchableOpacity 
+                    style={[styles.subjectOption, { backgroundColor: theme.background }]}
+                    onPress={() => handleSubjectSelection('chemistry')}
+                  >
+                    <View style={[styles.subjectOptionIcon, { backgroundColor: '#10B98120' }]}>
+                      <Text style={styles.subjectOptionEmoji}>⚛️</Text>
+                    </View>
+                    <Text style={[styles.subjectOptionName, { color: theme.text }]}>Chemistry</Text>
+                    <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
+                      Chemistry facts
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.subjectOption, { backgroundColor: theme.background }]}
+                    onPress={() => handleSubjectSelection('mathematics')}
+                  >
+                    <View style={[styles.subjectOptionIcon, { backgroundColor: '#3B82F620' }]}>
+                      <Text style={styles.subjectOptionEmoji}>📐</Text>
+                    </View>
+                    <Text style={[styles.subjectOptionName, { color: theme.text }]}>Mathematics</Text>
+                    <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
+                      Number puzzles
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         </View>
