@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
@@ -98,7 +98,12 @@ setIsSubmitting(false);
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={[styles.logo, { color: theme.primary }]}>EduGram</Text>
+        {/* Logo image - replace logo.png with your actual logo */}
+        <Image 
+          source={require('@/assets/images/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={[styles.title, { color: theme.text }]}>{t('welcome')}</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('learnPlayAchieve')}</Text>
         {errorMessage ? (
@@ -173,10 +178,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#22C55E',
-    textAlign: 'center',
+    width: 200,
+    height: 80,
+    alignSelf: 'center',
     marginBottom: 20,
   },
   title: {
