@@ -20,7 +20,7 @@ export default function LoginScreen() {
 
     try {
       setIsSubmitting(true);
-      const response = await fetch('http://10.103.211.237:3000/api/auth/userlogin', {
+      const response = await fetch('http://110.0.5.255:3000/api/auth/userlogin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
