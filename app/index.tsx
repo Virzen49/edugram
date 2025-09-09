@@ -1,18 +1,29 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SplashScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // Splash screen delay - 3 seconds then go to login
-    const timer = setTimeout(() => {
-      router.replace('/(auth)/login');
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    const bootstrap = async () => {
+      const token = await AsyncStorage.getItem('token');
+      const role = (await AsyncStorage.getItem('role')) || 'student';
+      setTimeout(() => {
+        if (token) {
+          if (role.toLowerCase() === 'teacher' || role.toLowerCase() === 'admin') {
+            router.replace('/(teacher)');
+          } else {
+            router.replace('/(tabs)');
+          }
+        } else {
+          router.replace('/(auth)/login');
+        }
+      }, 3000);
+    };
+    bootstrap();
   }, []);
 
   return (

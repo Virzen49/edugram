@@ -47,16 +47,30 @@ body: JSON.stringify(loginData),
 const result = await response.json().catch(() => ({}));
 
 if (response.ok) {
-
-// Optionally store token/user
-
-// e.g., await SecureStore.setItemAsync('token', result.token)
-
-// await SecureStore.setItemAsync('token' , result.token);
-
 await AsyncStorage.setItem('token', result.token);
-
+const role = (result && (result.role || result.user?.role || result.data?.role)) || 'student';
+await AsyncStorage.setItem('role', role);
+const displayName = (result && (result.name || result.fullName || result.user?.name || result.user?.fullName || result.data?.name)) || '';
+if (displayName) {
+await AsyncStorage.setItem('displayName', displayName);
+}
+// Also derive a raw name from the email if API didn't return one
+try {
+  const emailLocalPart = (email || '').split('@')[0] || '';
+  const base = emailLocalPart.split(/[._-]/)[0] || '';
+  const formatted = base ? base.charAt(0).toUpperCase() + base.slice(1).toLowerCase() : '';
+  if (formatted) {
+    await AsyncStorage.setItem('rawName', formatted);
+    if (!displayName) {
+      await AsyncStorage.setItem('displayName', formatted);
+    }
+  }
+} catch {}
+if (role?.toLowerCase() === 'teacher' || role?.toLowerCase() === 'admin') {
+router.replace('/(teacher)');
+} else {
 router.replace('/(tabs)');
+}
 
 } else {
 
