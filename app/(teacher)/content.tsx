@@ -40,7 +40,7 @@ export default function TeacherContentScreen() {
   );
 
   const handleVideoUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: 'video' });
+    const result = await DocumentPicker.getDocumentAsync({ type: 'video/*' });
     if (!result.canceled) setUploadedVideo(result);
   };
 
