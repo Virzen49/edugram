@@ -7,9 +7,9 @@ export default function TeacherClassesScreen() {
   const router = useRouter();
   const { selectedId, title, students } = useLocalSearchParams<{ selectedId?: string; title?: string; students?: string }>();
   const classes = [
-    { id: '10A', title: 'Class 10A', students: 25 },
-    { id: '11B', title: 'Class 11B', students: 30 },
-    { id: '9C', title: 'Class 9C', students: 28 },
+    { id: '10', title: 'Standard 10', students: 25 },
+    { id: '11', title: 'Standard 11', students: 30 },
+    { id: '9', title: 'Standard 9', students: 28 },
   ];
   return (
     <View style={styles.container}>

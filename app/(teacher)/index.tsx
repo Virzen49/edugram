@@ -1,19 +1,52 @@
 import { View, Text, StyleSheet, Image, ScrollView, FlatList, Pressable, Animated, Easing, Modal, TextInput, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors } from '@/constants/colors';
+import { colors } from '../../constants/colors';
+import { createContext } from 'react';
+
+// Define types for student and class data
+type StudentType = {
+  id: string;
+  name: string;
+  rollNo: string;
+  badges?: string[];
+};
+
+type ClassDataType = {
+  id: string;
+  title: string;
+  students: number;
+  studentsList: StudentType[];
+  image: string;
+};
+
+// Create context for sharing class data between components
+type ClassDataContextType = {
+  classData: ClassDataType[];
+  setClassData: React.Dispatch<React.SetStateAction<ClassDataType[]>>;
+  saveClassData: (data: ClassDataType[]) => Promise<void>;
+};
+
+const ClassDataContext = createContext<ClassDataContextType>({} as ClassDataContextType);
 import { typography } from '@/styles/typography';
-import { UserCircle2 } from 'lucide-react-native';
+import { UserCircle2, Home, Users, BarChart2, BookOpen, Settings } from 'lucide-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-export default function TeacherDashboardScreen() {
+// Define the type for the WeeklySchedule component ref
+type WeeklyScheduleRefType = {
+  addScheduleItem: (day: string, item: {time: string, title: string, type: string}) => void;
+};
+
+export default function TeacherSpaceScreen() {
   const router = useRouter();
-  const [greeting, setGreeting] = useState('Hello,');
+  const [greeting, setGreeting] = useState('Welcome,');
   const [dateText, setDateText] = useState('');
-  const [syncStatus, setSyncStatus] = useState<'online'|'offline'|'syncing'>('online');
+  const [syncStatus, setSyncStatus] = useState('offline');
   const [showFabMenu, setShowFabMenu] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const menuAnimation = useRef(new Animated.Value(0)).current;
   const [messages, setMessages] = useState<Array<{id:string; sender:string; preview:string; time:string}>>([]);
   const [composeVisible, setComposeVisible] = useState(false);
   const [composeText, setComposeText] = useState('');
@@ -23,11 +56,6 @@ export default function TeacherDashboardScreen() {
   const [scheduleType, setScheduleType] = useState('class');
   
   // Reference to the WeeklySchedule component
-  // Define the type for the WeeklySchedule component ref
-type WeeklyScheduleRefType = {
-  addScheduleItem: (day: string, item: {time: string, title: string, type: string}) => void;
-};
-
 const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
   const navigateAndClose = (path: any) => {
     setShowFabMenu(false);
@@ -42,10 +70,39 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const greetingOpacity = useRef(new Animated.Value(0)).current;
 
-  const [classData, setClassData] = useState([
-    { id: '10A', title: 'Class 10A', students: 25, image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800' },
-    { id: '11B', title: 'Class 11B', students: 30, image: 'https://images.unsplash.com/photo-1559223607-b32ab8dbfd54?w=800' },
-    { id: '9C', title: 'Class 9C', students: 28, image: 'https://images.unsplash.com/photo-1577896849786-alsf?ixlib=rb-4.0.3' },
+  const [classData, setClassData] = useState<ClassDataType[]>([
+    { 
+      id: '10', 
+      title: 'Standard 10', 
+      students: 25, 
+      studentsList: [
+        { id: '1001', name: 'Aditya Sharma', rollNo: '01' },
+        { id: '1002', name: 'Priya Patel', rollNo: '02' },
+        { id: '1003', name: 'Rahul Singh', rollNo: '03' },
+      ],
+      image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800' 
+    },
+    { 
+      id: '11', 
+      title: 'Standard 11', 
+      students: 30, 
+      studentsList: [
+        { id: '1101', name: 'Neha Gupta', rollNo: '01' },
+        { id: '1102', name: 'Vikram Mehta', rollNo: '02' },
+      ],
+      image: 'https://images.unsplash.com/photo-1559223607-b32ab8dbfd54?w=800' 
+    },
+    { 
+      id: '9', 
+      title: 'Standard 9', 
+      students: 28, 
+      studentsList: [
+        { id: '901', name: 'Ananya Desai', rollNo: '01' },
+        { id: '902', name: 'Rohan Kumar', rollNo: '02' },
+        { id: '903', name: 'Meera Joshi', rollNo: '03' },
+      ],
+      image: 'https://images.unsplash.com/photo-1577896849786-alsf?ixlib=rb-4.0.3' 
+    },
   ]);
   
   // Notification state
@@ -55,14 +112,39 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
   const ITEM_SPACING = 12;
   
   // Function to save class data to AsyncStorage
-  const saveClassData = async (data: any) => {
+  const saveClassData = async (data: ClassDataType[]) => {
     try {
       await AsyncStorage.setItem('teacherClassData', JSON.stringify(data));
       // Increment notifications when class data changes
       setNotifications(prev => prev + 1);
+      console.log('Class data saved successfully');
     } catch (error) {
       console.error('Failed to save class data:', error);
     }
+  };
+  
+  // Function to add a student to a class
+  const addStudentToClass = (classId: string, studentName: string, rollNo: string) => {
+    const updatedClasses = classData.map(c => {
+      if (c.id === classId) {
+        const newStudent: StudentType = {
+          id: Date.now().toString(),
+          name: studentName,
+          rollNo: rollNo
+        };
+        const updatedStudentsList = [...(c.studentsList || []), newStudent];
+        return {
+          ...c,
+          studentsList: updatedStudentsList,
+          students: updatedStudentsList.length // Update the count
+        };
+      }
+      return c;
+    });
+    
+    setClassData(updatedClasses);
+    saveClassData(updatedClasses);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   useEffect(() => {
@@ -70,7 +152,7 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
       const storedName = (await AsyncStorage.getItem('displayName')) || 'Mr. Sharma';
       const hour = new Date().getHours();
       const salutation = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
-      setGreeting(`${salutation}, ${storedName} 👋`);
+      setGreeting(`${salutation}, ${storedName}`);
       const formatter = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
       setDateText(formatter.format(new Date()));
     };
@@ -110,117 +192,202 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-    const ping = async () => {
-      try {
-        setSyncStatus('syncing');
-        await fetch('http://10.103.211.237:3000/', { method: 'HEAD' });
-        setSyncStatus('online');
-        // Flush outbox if present
-        const outboxRaw = await AsyncStorage.getItem('outbox');
-        if (outboxRaw) {
-          await AsyncStorage.removeItem('outbox');
-        }
-      } catch {
-        setSyncStatus('offline');
-      }
-    };
-    ping();
-    const t = setInterval(ping, 10000);
-    return () => clearInterval(t);
+    // Removed online/offline status check
+    return () => {};
   }, []);
 
+  // Toggle profile menu with animation
+  const toggleProfileMenu = () => {
+    if (showProfileMenu) {
+      // Animate out
+      Animated.timing(menuAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setShowProfileMenu(false);
+      });
+    } else {
+      setShowProfileMenu(true);
+      // Animate in
+      Animated.timing(menuAnimation, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+  
+  // Add a background press handler to the ScrollView content
+  const handleContentPress = () => {
+    if (showProfileMenu) {
+      toggleProfileMenu();
+    }
+  };
+  
+  // Get current route to highlight active menu item
+  const pathname = usePathname();
+  const currentRoute = pathname.split('/').pop() || 'index';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.topBar}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.content} 
+      showsVerticalScrollIndicator={false}
+      onStartShouldSetResponder={() => true}
+      onResponderRelease={handleContentPress}>
+      <View style={[styles.topBar, { marginTop: 50, marginBottom: 24 }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.pageTitle}>Teacher Space</Text>
+          <View style={{ flexDirection: 'row', marginLeft: 10, gap: 15 }}>
+            <Pressable 
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setNotifications(0);
+              }}
+            >
+              <MaterialCommunityIcons name="bell-outline" size={22} color={colors.text} />
+              {notifications > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationText}>{notifications}</Text>
+                </View>
+              )}
+            </Pressable>
+            <Pressable 
+              accessibilityRole="button" 
+              accessibilityLabel="Profile" 
+              onPress={toggleProfileMenu}
+            >
+              <UserCircle2 color={colors.text} size={22} />
+            </Pressable>
+          </View>
+        </View>
         <View>
-          <Animated.Text style={[styles.greeting, { opacity: greetingOpacity }]} accessibilityRole="header" accessibilityLabel={greeting}>
+          <Animated.Text style={[styles.greeting, { opacity: greetingOpacity, marginTop: 8 }]} accessibilityRole="header" accessibilityLabel={greeting}>
             {greeting}
           </Animated.Text>
           <Text style={styles.dateText}>{dateText}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={[styles.syncPill, syncStatus === 'online' ? { backgroundColor: '#E7F6E9' } : syncStatus === 'offline' ? { backgroundColor: '#FDE2E1' } : { backgroundColor: '#FFF4CC' } ]}>
-            <MaterialCommunityIcons name={syncStatus === 'online' ? 'cloud-check' : syncStatus === 'offline' ? 'cloud-off-outline' : 'cloud-sync-outline'} size={16} color={colors.text} />
-            <Text style={styles.syncText}>{syncStatus}</Text>
-          </View>
-          <Pressable 
-            style={{ marginRight: 10, position: 'relative' }}
-            onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setNotifications(0);
-            }}
-          >
-            <MaterialCommunityIcons name="bell-outline" size={22} color={colors.text} />
-            {notifications > 0 && (
-              <View style={{ position: 'absolute', top: -5, right: -5, backgroundColor: colors.chipDanger, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' }}>{notifications}</Text>
-              </View>
+          
+          {/* Profile dropdown menu */}
+          {showProfileMenu && (
+            <Animated.View 
+              style={[styles.profileDropdown, {
+                opacity: menuAnimation,
+                transform: [{ translateY: menuAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-10, 0]
+                })}]
+              }]} 
+              onStartShouldSetResponder={() => true}>
+              <Pressable 
+                style={[styles.menuItem, currentRoute === 'index' && styles.menuItemActive]} 
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  router.push('/(teacher)');
+                }}
+              >
+                <Home size={20} color={currentRoute === 'index' ? colors.primary : colors.text} />
+                <Text style={[styles.menuItemText, currentRoute === 'index' && {color: colors.primary}]}>Teacher Space</Text>
+              </Pressable>
+              
+              <Pressable 
+                style={[styles.menuItem, currentRoute === 'classes' && styles.menuItemActive]} 
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  router.push('/(teacher)/classes');
+                }}
+              >
+                <Users size={20} color={currentRoute === 'classes' ? colors.primary : colors.text} />
+                <Text style={[styles.menuItemText, currentRoute === 'classes' && {color: colors.primary}]}>Classes</Text>
+              </Pressable>
+              
+              <Pressable 
+                style={[styles.menuItem, currentRoute === 'analytics' && styles.menuItemActive]} 
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  router.push('/(teacher)/analytics');
+                }}
+              >
+                <BarChart2 size={20} color={currentRoute === 'analytics' ? colors.primary : colors.text} />
+                <Text style={[styles.menuItemText, currentRoute === 'analytics' && {color: colors.primary}]}>Analytics</Text>
+              </Pressable>
+              
+              <Pressable 
+                style={[styles.menuItem, currentRoute === 'content' && styles.menuItemActive]} 
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  router.push('/(teacher)/content');
+                }}
+              >
+                <BookOpen size={20} color={currentRoute === 'content' ? colors.primary : colors.text} />
+                <Text style={[styles.menuItemText, currentRoute === 'content' && {color: colors.primary}]}>Content</Text>
+              </Pressable>
+              
+              <Pressable 
+                style={[styles.menuItem, currentRoute === 'settings' && styles.menuItemActive]} 
+                onPress={() => {
+                  setShowProfileMenu(false);
+                  router.push('/(teacher)/settings');
+                }}
+              >
+                <Settings size={20} color={currentRoute === 'settings' ? colors.primary : colors.text} />
+                <Text style={[styles.menuItemText, currentRoute === 'settings' && {color: colors.primary}]}>Settings</Text>
+              </Pressable>
+            </Animated.View>
             )}
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Profile" style={[styles.profileBtn, { backgroundColor: colors.funPalette[2] }] }>
-            <View style={styles.profileCircle}>
-              <UserCircle2 color={colors.text} size={22} />
-            </View>
-          </Pressable>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }} style={{ marginBottom: 8 }}>
-        <HeroAction label="Start Session" icon="run" onPress={() => router.push('/(teacher)/class/10A?title=Class%2010A&students=25')} />
-        <HeroAction label="Start Lesson" icon="book-open-variant" onPress={() => router.push('/(teacher)/content')} />
-        <HeroAction label="Activity" icon="gamepad-variant-outline" onPress={() => router.push('/(teacher)/content')} />
-        <HeroAction label="Quick Quiz" icon="clipboard-text-outline" onPress={async () => { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(teacher)/quiz'); }} />
-        <HeroAction label="Parent Update" icon="send" onPress={() => setComposeVisible(true)} />
-      </ScrollView>
+      {/* Quick Actions section removed as requested */}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <Text style={styles.sectionTitle}>My Classes</Text>
         <Pressable 
+          style={styles.manageButton}
           onPress={() => {
             Alert.alert(
-              'My Classes',
-              'Manage your classes, view student details, and track attendance. Long press on a class card for more options.'
-            );
-          }}
-          style={{ marginLeft: 8 }}
-        >
-          <MaterialCommunityIcons name="information-outline" size={18} color={colors.text} />
-        </Pressable>
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <View style={{ flex: 1 }} />
-        <Pressable 
-          onPress={() => {
-            Alert.alert(
-              'Add New Class',
-              'Enter a name for the new class',
+              'Manage Classes',
+              'What would you like to do?',
               [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Add',
+                { 
+                  text: 'Add Standard', 
                   onPress: () => {
-                    const newClass = {
-                      id: Date.now().toString(),
-                      title: 'New Class',
-                      students: 0,
-                      image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
-                    };
-                    const updatedClasses = [...classData, newClass];
-                    setClassData(updatedClasses);
-                    
-                    // Save to AsyncStorage using the saveClassData function
-                    saveClassData(updatedClasses);
-                    
-                    // Show success message
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  }
-                }
+                    Alert.prompt(
+                      'Add New Standard',
+                      'Enter the standard number',
+                      [{ text: 'Cancel', style: 'cancel' },
+                       { text: 'Add', onPress: (standardNumber) => {
+                          if (!standardNumber) return;
+                          const newClass = {
+                            id: standardNumber,
+                            title: `Standard ${standardNumber}`,
+                            students: 0,
+                            studentsList: [], // Add empty studentsList array
+                            image: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800'
+                          };
+                          const updatedClasses = [...classData, newClass];
+                          setClassData(updatedClasses);
+                          saveClassData(updatedClasses);
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                       }}
+                      ]
+                    );
+                  } 
+                },
+                { 
+                  text: 'Reorder Classes', 
+                  onPress: () => {
+                    // Future implementation for reordering
+                    Alert.alert('Coming Soon', 'This feature will be available in the next update.');
+                  } 
+                },
+                { text: 'Cancel', style: 'cancel' }
               ]
             );
           }}
         >
-          <Text style={{ color: colors.primary, fontWeight: '600' }}>Add Class</Text>
+          <Text style={styles.manageButtonText}>Manage Classes</Text>
         </Pressable>
       </View>
       {classData.map((c) => (
@@ -229,35 +396,51 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
           onLongPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             Alert.alert(
-              c.title,
-              `${c.students} Students`,
+              `Manage ${c.title}`,
+              'What would you like to do?',
               [
-                { text: 'Cancel', style: 'cancel' },
                 { 
-                  text: 'Delete Class', 
+                  text: 'Delete Standard', 
                   style: 'destructive',
                   onPress: () => {
-                    const updatedClasses = classData.filter(cls => cls.id !== c.id);
-                    setClassData(updatedClasses);
-                    
-                    // Save to AsyncStorage using the saveClassData function
-                    saveClassData(updatedClasses);
-                      
-                    // Show success message
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  }
-                }
+                    Alert.alert(
+                      'Confirm Delete',
+                      `Are you sure you want to delete ${c.title}?`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Delete', 
+                          style: 'destructive',
+                          onPress: () => {
+                            const updatedClasses = classData.filter(cls => cls.id !== c.id);
+                            setClassData(updatedClasses);
+                            saveClassData(updatedClasses);
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                          }
+                        }
+                      ]
+                    );
+                  } 
+                },
+                { text: 'Cancel', style: 'cancel' }
               ]
             );
           }}
         >
-          <ClassListCard title={c.title} students={c.students} onPress={() => router.push(`/(teacher)/class/${c.id}?title=${encodeURIComponent(c.title)}&students=${c.students}`)} />
+          <ClassListCard 
+            title={c.title} 
+            students={c.studentsList ? c.studentsList.length : c.students} 
+            onPress={() => router.push(`/(teacher)/class/${c.id}?title=${encodeURIComponent(c.title)}&students=${c.students}`)} 
+            classData={classData}
+            setClassData={setClassData}
+            saveClassData={saveClassData}
+          />
         </Pressable>
       ))}
 
       <Text style={styles.sectionTitle}>Class Overview</Text>
 
-      {/* Compact stats row */}
+      {/* Simplified Class Overview */}
       <View style={styles.row}>
         <View style={[styles.card, styles.halfCard, { minHeight: 100 }]}>
           <Text style={styles.cardTitle}>78%</Text>
@@ -269,81 +452,11 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
         </View>
       </View>
 
-      {/* Performance full-width card - simple svg line chart */}
-      <View style={[styles.card]}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={styles.cardTitle}>Class Performance</Text>
-          <View style={styles.viewTrends}><Text style={styles.viewTrendsText}>View Trends</Text></View>
-        </View>
-        <View style={{ height: 120, marginTop: 8, marginBottom: 10, justifyContent: 'center' }}>
-          <View style={{ height: 2, backgroundColor: '#EEF2FF', position: 'absolute', left: 0, right: 0, top: 60 }} />
-          <View style={{ height: 2, backgroundColor: '#F3F4F6', position: 'absolute', left: 0, right: 0, top: 90 }} />
-          <View style={{ height: 2, backgroundColor: '#F3F4F6', position: 'absolute', left: 0, right: 0, top: 30 }} />
-          <View style={{ height: 100, flexDirection: 'row', alignItems: 'flex-end' }}>
-            { [60,65,70,68,75].map((v,i)=> (
-              <Pressable key={i} onPress={()=>alert(`Avg: ${v}%`)} style={{ width: 40, height: 2, backgroundColor: colors.primary, marginLeft: i===0?0:8, transform: [{ translateY: -(v-50) }] }} />
-            )) }
-          </View>
-        </View>
-        <View style={styles.chartLegend}>
-          <View style={[styles.dot,{backgroundColor:colors.primary}]} />
-          <Text style={styles.legendLabel}>Avg. Score</Text>
-          <View style={[styles.dot,{backgroundColor:'#EAB308', marginLeft:12}]} />
-          <Text style={styles.legendLabel}>Target</Text>
-        </View>
-      </View>
+      {/* My Uploads section removed as requested */}
 
-      {/* My Uploads */}
-      <Text style={styles.sectionTitle}>My Uploads</Text>
-      <FlatList
-        horizontal
-        data={classData}
-        keyExtractor={(i) => i.id+"-up"}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 4 }}
-        ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-        renderItem={({ item }) => (
-          <UploadCard title={item.title.replace('Class','Quest')} status="In Progress" image={item.image} />
-        )}
-      />
-
-      {/* Discover Content */}
-      <Text style={styles.sectionTitle}>Discover Content</Text>
-      <View style={styles.filtersRow}>
-        <Chip label="Subject" />
-        <Chip label="Grade" />
-        <Chip label="Language" />
-        <Chip label="Difficulty" />
-      </View>
-      <ContentCard
-        title="Interactive Math Quest"
-        subtitle="Engage students with this interactive quest covering algebra and geometry."
-        cta="Add to My Assignments"
-        image={classData[0].image}
-      />
-      <ContentCard
-        title="Science Experiment Guide"
-        subtitle="Step-by-step guide for a fun and educational science experiment."
-        cta="Add to My Assignments"
-        image={classData[2].image}
-      />
+      {/* Discover Content section removed as requested */}
       {/* Analytics Snapshot */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={styles.sectionTitle}>Analytics Snapshot</Text>
-          <Pressable 
-            onPress={() => {
-              Alert.alert(
-                'Analytics Overview',
-                'Quick overview of key metrics across all your classes. Tap on any card to see detailed analytics.'
-              );
-            }}
-            style={{ marginLeft: 8 }}
-          >
-            <MaterialCommunityIcons name="information-outline" size={18} color={colors.text} />
-          </Pressable>
-        </View>
-      </View>
+      <Text style={styles.sectionTitle}>Analytics Snapshot</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ paddingRight: 8 }}>
         <Pressable onPress={() => Alert.alert('Literacy Analytics', 'View detailed literacy performance across all classes.')}>
           <MetricCard icon="book-open-page-variant" label="Literacy" value={72} color={colors.chipSuccess} />
@@ -354,35 +467,19 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
         <Pressable onPress={() => Alert.alert('Participation Analytics', 'Monitor student engagement and participation metrics.')}>
           <MetricCard icon="drama-masks" label="Participation" value={81} color={colors.chipInfo} />
         </Pressable>
-        <Pressable onPress={() => Alert.alert('Attendance Analytics', 'View detailed attendance reports for all classes.')}>
-          <MetricCard icon="target" label="Attendance" value={92} color={colors.chipWarn} />
-        </Pressable>
       </ScrollView>
 
-      {/* Weekly Schedule */}
+      {/* Weekly Schedule - Vertical Scroll */}
       <View style={{marginBottom: 16}}>
         <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={styles.sectionTitle}>Weekly Schedule</Text>
-            <Pressable 
-              onPress={() => {
-                Alert.alert(
-                  'Weekly Schedule',
-                  'View and manage your weekly classes, meetings, and events. Long press on any schedule item to delete it. Add new items using the Add Item button.'
-                );
-              }}
-              style={{ marginLeft: 8 }}
-            >
-              <MaterialCommunityIcons name="information-outline" size={18} color={colors.text} />
-            </Pressable>
-          </View>
+          <Text style={styles.sectionTitle}>Weekly Schedule</Text>
           <Pressable onPress={() => setComposeVisible(true)} accessibilityRole="button" accessibilityLabel="Add schedule item">
             <Text style={{color: colors.primary, fontWeight: '600'}}>Add Item</Text>
           </Pressable>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scheduleContainer}>
+        <View style={styles.scheduleContainer}>
           <WeeklySchedule ref={weeklyScheduleRef} />
-        </ScrollView>
+        </View>
       </View>
       
       {/* Add Schedule Modal */}
@@ -429,24 +526,7 @@ const weeklyScheduleRef = useRef<WeeklyScheduleRefType>(null);
         </Pressable>
       </Modal>
 
-      {/* Gamification */}
-      <Text style={styles.sectionTitle}>Achievements</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }} style={{ marginBottom: 8 }}>
-        <Badge label="Mentor" />
-        <Badge label="Innovator" />
-        <Badge label="Attendance Star" />
-        <Badge label="Lesson Pro" />
-        <Badge label="Quiz Master" />
-      </ScrollView>
-      <View style={styles.microMotivation}><Text style={styles.microText}>You saved 2 hours this week with auto-quizzes! 🎉</Text></View>
-
-      {/* Teacher Growth */}
-      <Text style={styles.sectionTitle}>Your Learning Today</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
-        <LearnCard title="5-min: Fun with AR" progress={0.4} />
-        <LearnCard title="Better Parent Comms" progress={0.7} />
-        <LearnCard title="Micro Assessments" progress={0.2} />
-      </ScrollView>
+      {/* Achievements and Learning sections removed as requested */}
 
       {/* FAB */}
       <View style={{ height: 80 }} />
@@ -492,16 +572,76 @@ function HeroAction({ label, icon, onPress }: { label: string; icon: any; onPres
   );
 }
 
-function ClassListCard({ title, students, onPress }: { title: string; students: number; onPress: () => void }) {
+function ClassListCard({ title, students, onPress, classData, setClassData, saveClassData }: { 
+  title: string; 
+  students: number; 
+  onPress: () => void;
+  classData: ClassDataType[];
+  setClassData: React.Dispatch<React.SetStateAction<ClassDataType[]>>;
+  saveClassData: (data: ClassDataType[]) => Promise<void>;
+}) {
   return (
-    <Pressable onPress={onPress} style={styles.classListCard}>
+    <Pressable onPress={onPress} style={styles.classListCard} accessibilityRole="button" accessibilityLabel={`Open ${title}`}>
       <View style={[styles.avatar, { backgroundColor: colors.funPalette[0] }]} />
       <View style={{ flex: 1 }}>
         <Text style={styles.className}>{title}</Text>
-        <Text style={styles.subtle}>{`${Math.floor(students*0.75)}/${students} present today`}</Text>
-        <View style={styles.miniTrack}><View style={[styles.miniFill, { width: '65%' }]} /></View>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.subtle}>{`${students} students`}</Text>
+          <Pressable 
+          style={styles.addStudentButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            Alert.prompt(
+              `Add Student to ${title}`,
+              'Enter student name',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Add', onPress: (name) => {
+                  if (!name) return;
+                  Alert.prompt(
+                    'Student Roll Number',
+                    'Enter roll number',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Add', onPress: (rollNo) => {
+                        if (!rollNo) return;
+                        // Extract class ID from the title (Standard X)
+                        const classId = title.split(' ')[1];
+                        // Find the class and update it directly since addStudentToClass isn't accessible here
+                        const updatedClasses = classData.map(c => {
+                          if (c.id === classId) {
+                            const newStudent: StudentType = {
+                              id: Date.now().toString(),
+                              name: name,
+                              rollNo: rollNo || '',
+                              badges: []
+                            };
+                            const updatedStudentsList = [...(c.studentsList || []), newStudent];
+                            return {
+                              ...c,
+                              studentsList: updatedStudentsList,
+                              students: updatedStudentsList.length // Update the count
+                            };
+                          }
+                          return c;
+                        });
+                        
+                        setClassData(updatedClasses);
+                        saveClassData(updatedClasses);
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      }}
+                    ]
+                  );
+                }}
+              ]
+            );
+          }}
+        >
+            <Text style={styles.addStudentText}>+ Add Student</Text>
+          </Pressable>
+        </View>
       </View>
-      <View style={styles.alertDot} />
+      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textMuted} />
     </Pressable>
   );
 }
@@ -626,27 +766,27 @@ const WeeklySchedule = forwardRef<WeeklyScheduleRefType, WeeklyScheduleProps>((p
   // State for schedule data
   const [scheduleData, setScheduleData] = useState<Array<{day: string; items: Array<{id: string; time: string; title: string; type: string}>}>>([
     { day: 'Monday', items: [
-      { id: '1', time: '9:00 AM', title: 'Class 10A - Math', type: 'class' },
+      { id: '1', time: '9:00 AM', title: 'Standard 10 - Math', type: 'class' },
       { id: '2', time: '11:30 AM', title: 'Staff Meeting', type: 'meeting' },
-      { id: '3', time: '2:00 PM', title: 'Class 11B - Physics', type: 'class' },
+      { id: '3', time: '2:00 PM', title: 'Standard 11 - Physics', type: 'class' },
     ]},
     { day: 'Tuesday', items: [
-      { id: '4', time: '10:00 AM', title: 'Class 9C - Chemistry', type: 'class' },
+      { id: '4', time: '10:00 AM', title: 'Standard 9 - Chemistry', type: 'class' },
       { id: '5', time: '1:00 PM', title: 'Parent-Teacher Meeting', type: 'meeting' },
     ]},
     { day: 'Wednesday', items: [
-      { id: '6', time: '9:00 AM', title: 'Class 10A - Math', type: 'class' },
+      { id: '6', time: '9:00 AM', title: 'Standard 10 - Math', type: 'class' },
       { id: '7', time: '12:00 PM', title: 'Department Lunch', type: 'event' },
-      { id: '8', time: '2:00 PM', title: 'Class 11B - Physics', type: 'class' },
+      { id: '8', time: '2:00 PM', title: 'Standard 11 - Physics', type: 'class' },
     ]},
     { day: 'Thursday', items: [
-      { id: '9', time: '10:00 AM', title: 'Class 9C - Chemistry', type: 'class' },
+      { id: '9', time: '10:00 AM', title: 'Standard 9 - Chemistry', type: 'class' },
       { id: '10', time: '3:00 PM', title: 'Professional Development', type: 'training' },
     ]},
     { day: 'Friday', items: [
-      { id: '11', time: '9:00 AM', title: 'Class 10A - Math', type: 'class' },
+      { id: '11', time: '9:00 AM', title: 'Standard 10 - Math', type: 'class' },
       { id: '12', time: '11:00 AM', title: 'School Assembly', type: 'event' },
-      { id: '13', time: '2:00 PM', title: 'Class 11B - Physics', type: 'class' },
+      { id: '13', time: '2:00 PM', title: 'Standard 11 - Physics', type: 'class' },
     ]},
   ]);
   
@@ -727,45 +867,51 @@ const WeeklySchedule = forwardRef<WeeklyScheduleRefType, WeeklyScheduleProps>((p
   };
   
   return (
-    <View style={styles.weeklySchedule}>
+    <ScrollView style={styles.weeklySchedule} showsVerticalScrollIndicator={false}>
       {scheduleData.map((daySchedule, index) => (
-        <View key={daySchedule.day} style={styles.dayColumn}>
+        <View key={daySchedule.day} style={styles.dayRow}>
           <View style={[styles.dayHeader, new Date().getDay() - 1 === index ? styles.currentDayHeader : null]}>
             <Text style={styles.dayName}>{getDayName(weekDates[index])}</Text>
             <Text style={styles.dayDate}>{formatDate(weekDates[index])}</Text>
           </View>
           <View style={styles.scheduleItems}>
-            {daySchedule.items.map((item) => (
-              <Pressable 
-                key={item.id} 
-                style={styles.scheduleItem}
-                onLongPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  Alert.alert(
-                    'Schedule Item',
-                    `${item.title} at ${item.time}`,
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { 
-                        text: 'Delete', 
-                        style: 'destructive',
-                        onPress: () => deleteScheduleItem(item.id)
-                      }
-                    ]
-                  );
-                }}
-              >
-                <Text style={styles.scheduleTime}>{item.time}</Text>
-                <View style={[styles.scheduleItemContent, { borderLeftColor: getTypeColor(item.type) }]}>
-                  <Text style={styles.scheduleTitle}>{item.title}</Text>
-                  <Text style={styles.scheduleType}>{item.type}</Text>
-                </View>
-              </Pressable>
-            ))}
+            {daySchedule.items.length > 0 ? (
+              daySchedule.items.map((item) => (
+                <Pressable 
+                  key={item.id} 
+                  style={styles.scheduleItem}
+                  onLongPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    Alert.alert(
+                      'Schedule Item',
+                      `${item.title} at ${item.time}`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Delete', 
+                          style: 'destructive',
+                          onPress: () => deleteScheduleItem(item.id)
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={styles.scheduleTime}>{item.time}</Text>
+                  <View style={[styles.scheduleItemContent, { borderLeftColor: getTypeColor(item.type) }]}>
+                    <Text style={styles.scheduleTitle}>{item.title}</Text>
+                    <Text style={styles.scheduleType}>{item.type}</Text>
+                  </View>
+                </Pressable>
+              ))
+            ) : (
+              <View style={[styles.scheduleItem, {justifyContent: 'center', paddingVertical: 20}]}>
+                <Text style={{color: colors.textMuted, textAlign: 'center', fontStyle: 'italic'}}>No events scheduled</Text>
+              </View>
+            )}
           </View>
         </View>
       ))}
-    </View>
+    </ScrollView>
   );
 });
 
@@ -773,6 +919,60 @@ const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    manageButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    manageButtonText: {
+      color: 'white',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    addStudentButton: {
+      marginLeft: 12,
+      backgroundColor: colors.lightBackground,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    addStudentText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    profileDropdown: {
+      position: 'absolute',
+      top: 50,
+      right: 0,
+      backgroundColor: 'white',
+      borderRadius: 8,
+      padding: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      zIndex: 1000,
+      width: 180,
+    },
+    menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 6,
+    marginVertical: 2,
+  },
+  menuItemActive: {
+    backgroundColor: colors.surface,
+  },
+    menuItemText: {
+      marginLeft: 12,
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.text,
     },
     notificationBadge: {
       position: 'absolute',
@@ -791,25 +991,31 @@ const styles = StyleSheet.create({
       fontWeight: 'bold',
     },
   scheduleContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   weeklySchedule: {
-    flexDirection: 'row',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 4,
   },
-  dayColumn: {
-    width: 200,
-    marginRight: 12,
+  dayRow: {
+    marginBottom: 20,
   },
   dayHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: colors.surface,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 8,
+    marginBottom: 12,
+    shadowColor: colors.cardShadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
   currentDayHeader: {
     backgroundColor: '#FFF8E1',
@@ -818,52 +1024,87 @@ const styles = StyleSheet.create({
   dayName: {
     fontWeight: '700',
     color: colors.text,
+    marginRight: 8,
+    fontSize: 16,
   },
   dayDate: {
     color: colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '500',
   },
   scheduleItems: {
-    gap: 8,
+    gap: 10,
   },
   scheduleItem: {
     backgroundColor: colors.surface,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 8,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: colors.cardShadow,
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   scheduleTime: {
-    fontSize: 12,
+    fontSize: 14,
     color: colors.textMuted,
-    marginBottom: 4,
+    fontWeight: '600',
+    width: 80,
   },
   scheduleItemContent: {
     borderLeftWidth: 3,
-    paddingLeft: 8,
+    paddingLeft: 12,
+    flex: 1,
   },
   scheduleTitle: {
     fontWeight: '600',
     color: colors.text,
+    fontSize: 15,
   },
   scheduleType: {
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 4,
     textTransform: 'capitalize',
   },
   content: {
     padding: 20,
     paddingTop: 28,
   },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: 0,
+  },
   greeting: {
     ...typography.headline,
+    fontSize: 18,
     marginBottom: 0,
   },
   dateText: { ...typography.subtle, marginTop: 2 },
-  syncPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
-  syncText: { color: colors.text, fontWeight: '600', textTransform: 'capitalize' },
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   profileBtn: { padding: 0, borderRadius: 18 },
   profileCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: {

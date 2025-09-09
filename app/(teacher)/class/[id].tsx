@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, FlatList, Pressable, ScrollView, Alert, Modal } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@/constants/colors';
@@ -8,8 +9,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function ClassDetailsScreen() {
   const { id, title, students: count } = useLocalSearchParams<{ id: string; title?: string; students?: string }>();
   const router = useRouter();
-  const [students, setStudents] = useState<Array<{id: string; name: string; status: string; badges: string[]}>>([]);
-  const [tab, setTab] = useState<'Roster'|'Lessons'|'Analytics'|'Messages'>('Roster');
+  const [students, setStudents] = useState<Array<{id: string; name: string; badges: string[]; rollNo?: string}>>([]);
+  const [tab, setTab] = useState<'Roster'|'Lessons'|'Messages'>('Roster');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -18,6 +19,26 @@ export default function ClassDetailsScreen() {
   useEffect(() => {
     const loadStudents = async () => {
       try {
+        // First try to get students from the class data in teacherClassData
+        const classDataRaw = await AsyncStorage.getItem('teacherClassData');
+        if (classDataRaw) {
+          const classData = JSON.parse(classDataRaw);
+          const currentClass = classData.find((c: any) => c.id === id);
+          
+          if (currentClass && currentClass.studentsList && currentClass.studentsList.length > 0) {
+            // Map the studentsList to match our expected format
+            const formattedStudents = currentClass.studentsList.map((student: any) => ({
+              id: student.id,
+              name: student.name,
+              rollNo: student.rollNo,
+              badges: student.badges || []
+            }));
+            setStudents(formattedStudents);
+            return;
+          }
+        }
+        
+        // Fallback to legacy storage method
         const storedStudents = await AsyncStorage.getItem(`class_${id}_students`);
         if (storedStudents) {
           setStudents(JSON.parse(storedStudents));
@@ -26,8 +47,8 @@ export default function ClassDetailsScreen() {
           const defaultStudents = Array.from({ length: Number(count||8) }).map((_, i) => ({
             id: `${i+1}`,
             name: `Student ${i+1}`,
-            status: i%3===0 ? 'absent' : 'present',
-            badges: i%4===0 ? ['⭐'] : []
+            badges: i%4===0 ? ['⭐'] : [],
+            rollNo: `${i+1}`
           }));
           setStudents(defaultStudents);
           await AsyncStorage.setItem(`class_${id}_students`, JSON.stringify(defaultStudents));
@@ -70,16 +91,25 @@ export default function ClassDetailsScreen() {
             setMenuVisible(false);
             
             try {
-              // Save updated students to AsyncStorage
-              await AsyncStorage.setItem(`students-${id}`, JSON.stringify(updatedStudents));
+              // Save updated students to local storage
+              await AsyncStorage.setItem(`class_${id}_students`, JSON.stringify(updatedStudents));
               
-              // Update class data in AsyncStorage to reflect new student count
+              // Update class data in AsyncStorage to reflect new student count and studentsList
               const savedClassData = await AsyncStorage.getItem('teacherClassData');
               if (savedClassData) {
                 const classData = JSON.parse(savedClassData);
-                const updatedClassData = classData.map((cls: { id: string; students: number }) => {
+                const updatedClassData = classData.map((cls: any) => {
                   if (cls.id === id) {
-                    return { ...cls, students: updatedStudents.length };
+                    // Update the studentsList by removing the deleted student
+                    const updatedStudentsList = (cls.studentsList || []).filter(
+                      (student: any) => student.id !== studentId
+                    );
+                    
+                    return { 
+                      ...cls, 
+                      students: updatedStudentsList.length,
+                      studentsList: updatedStudentsList
+                    };
                   }
                   return cls;
                 });
@@ -119,18 +149,17 @@ export default function ClassDetailsScreen() {
       {/* Header */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.title}>{title || `Class ${id}`}</Text>
+          <Text style={styles.title}>{title || `Standard ${id}`}</Text>
           <Text style={styles.subtleHeader}>{`${students.length} Students`}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-          <View style={styles.syncPill}><MaterialCommunityIcons name="cloud-check" size={16} color={colors.text} /><Text style={styles.syncText}>online</Text></View>
           <Pressable style={styles.startBtn} accessibilityRole="button" accessibilityLabel="Start Session" onPress={()=>alert('Starting today\'s session…')}><Text style={styles.startText}>Start Session</Text></Pressable>
         </View>
       </View>
 
       {/* Quick Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6 }}>
-        {(['Roster','Lessons','Analytics','Messages'] as const).map((t, i)=> (
+        {(['Roster','Lessons','Messages'] as const).map((t, i)=> (
           <Pressable key={i} onPress={()=>setTab(t)}>
             <View style={[styles.chip, tab===t && { backgroundColor: '#FFF8E1', borderColor: colors.primary }]}>
               <Text style={[styles.chipText, tab===t && { color: colors.text }]}>{t}</Text>
@@ -143,6 +172,84 @@ export default function ClassDetailsScreen() {
       {tab==='Roster' && (
         <>
           <Text style={styles.sectionTitle}>Roster</Text>
+          <View style={styles.rosterHeader}>
+            <Text style={styles.rosterTitle}>Students ({students.length})</Text>
+            <Pressable 
+              style={styles.addButton}
+              onPress={() => {
+                Alert.prompt(
+                  'Add New Student',
+                  'Enter student name',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Next', onPress: (name) => {
+                      if (!name) return;
+                      Alert.prompt(
+                        'Student Roll Number',
+                        'Enter roll number',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Add', onPress: async (rollNo) => {
+                            if (!rollNo) return;
+                            
+                            // Create new student
+                            const newStudent = {
+                              id: Date.now().toString(),
+                              name,
+                              rollNo: rollNo || '',
+                              badges: []
+                            };
+                            
+                            // Update local state
+                            const updatedStudents = [...students, newStudent];
+                            setStudents(updatedStudents);
+                            
+                            try {
+                              // Save to local storage
+                              await AsyncStorage.setItem(`class_${id}_students`, JSON.stringify(updatedStudents));
+                              
+                              // Update class data
+                              const savedClassData = await AsyncStorage.getItem('teacherClassData');
+                              if (savedClassData) {
+                                const classData = JSON.parse(savedClassData);
+                                const updatedClassData = classData.map((cls: any) => {
+                                  if (cls.id === id) {
+                                    // Add student to the studentsList
+                                    const updatedStudentsList = [...(cls.studentsList || []), {
+                                      id: newStudent.id,
+                                      name: newStudent.name,
+                                      rollNo: newStudent.rollNo
+                                    }];
+                                    
+                                    return { 
+                                      ...cls, 
+                                      students: updatedStudentsList.length,
+                                      studentsList: updatedStudentsList
+                                    };
+                                  }
+                                  return cls;
+                                });
+                                
+                                // Save updated class data
+                                await AsyncStorage.setItem('teacherClassData', JSON.stringify(updatedClassData));
+                              }
+                              
+                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            } catch (error) {
+                              console.error('Failed to save new student:', error);
+                            }
+                          }}
+                        ]
+                      );
+                    }}
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.addButtonText}>Add Student</Text>
+            </Pressable>
+          </View>
+          
           <View style={styles.grid}>
             {students.map((item)=> (
               <View key={item.id} style={styles.cardCell}>
@@ -154,7 +261,7 @@ export default function ClassDetailsScreen() {
                 >
                   <View style={[styles.avatarLg, { backgroundColor: colors.funPalette[Number(item.id)%colors.funPalette.length] }]} />
                   <Text style={styles.studentName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.subtle}>{item.status==='present'?'🟢 Present':'🔴 Absent'}</Text>
+                  <Text style={styles.rollNo}>Roll No: {item.rollNo || 'N/A'}</Text>
                 </Pressable>
                 <Pressable 
                   style={styles.optionsButton}
@@ -168,16 +275,7 @@ export default function ClassDetailsScreen() {
           </View>
         </>
       )}
-      {tab==='Analytics' && (
-        <>
-          <Text style={styles.sectionTitle}>Analytics</Text>
-          <View style={styles.snapRow}>
-            <View style={styles.snapCard}><Text style={styles.snapLabel}>Literacy</Text><Text style={styles.snapValue}>72%</Text></View>
-            <View style={styles.snapCard}><Text style={styles.snapLabel}>Numeracy</Text><Text style={styles.snapValue}>64%</Text></View>
-            <View style={styles.snapCard}><Text style={styles.snapLabel}>Participation</Text><Text style={styles.snapValue}>81%</Text></View>
-          </View>
-        </>
-      )}
+
 
       {/* Analytics Snapshot */}
       <Text style={styles.sectionTitle}>Snapshot</Text>
@@ -222,7 +320,37 @@ export default function ClassDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  rosterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  rosterTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  addButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  rollNo: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 20, fontWeight: '700', color: colors.text },
   subtleHeader: { color: colors.textMuted },
