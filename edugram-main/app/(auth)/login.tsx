@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -6,43 +6,10 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = async () => {
-    if (isSubmitting) return;
-    setErrorMessage('');
-
-    const loginData = {
-      email: email,
-      password: password,
-    };
-
-    try {
-      setIsSubmitting(true);
-      const response = await fetch('http://110.0.5.255:3000/api/auth/userlogin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
-      });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        // Optionally store token/user
-        // e.g., await SecureStore.setItemAsync('token', result.token)
-        router.replace('/(tabs)');
-      } else {
-        const message = (result && (result.message || result.error)) || 'Login failed. Please try again.';
-        setErrorMessage(message);
-      }
-    } catch (error: unknown) {
-      setErrorMessage('Unable to reach server. Check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleLogin = () => {
+    // In a real app, validate credentials here
+    router.replace('/(tabs)');
   };
 
   return (
@@ -52,9 +19,6 @@ export default function LoginScreen() {
     >
       <View style={styles.content}>
         <Text style={styles.title}>Welcome Back</Text>
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        ) : null}
         
         <View style={styles.form}>
           <View style={styles.inputGroup}>
@@ -80,12 +44,8 @@ export default function LoginScreen() {
             />
           </View>
           
-          <TouchableOpacity style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]} onPress={handleLogin} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
-            )}
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
           
           <TouchableOpacity>
@@ -128,11 +88,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
   },
-  errorText: {
-    textAlign: 'center',
-    color: '#DC2626',
-    marginBottom: 12,
-  },
   form: {
     gap: 20,
   },
@@ -159,9 +114,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
-  },
-  loginButtonDisabled: {
-    opacity: 0.7,
   },
   loginButtonText: {
     color: '#FFFFFF',
