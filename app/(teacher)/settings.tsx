@@ -43,17 +43,43 @@ export default function TeacherSettingsScreen() {
 	});
 
 	useEffect(() => {
-		// Try to load cached user profile if present
 		(async () => {
 			try {
+				const token = await AsyncStorage.getItem('token');
+				if (token) {
+					const res = await fetch('http://10.103.211.237:3000/api/auth/profile', {
+						method: 'GET',
+						headers: {
+							Authorization: `Bearer ${token}`,
+							'Content-Type': 'application/json',
+						},
+					});
+					if (res.ok) {
+						const data = await res.json();
+						const u = data?.user || {};
+						const fallbackPhoto = u?.email ? `https://i.pravatar.cc/200?u=${encodeURIComponent(u.email)}` : undefined;
+						setProfile((p) => ({
+							...p,
+							name: u.name || u.fullName || p.name,
+							email: u.email || p.email,
+							photoUrl: u.avatar || u.photoUrl || fallbackPhoto || p.photoUrl,
+							university: u.university || u.institute || p.university,
+							department: u.department || u.subject || p.department,
+							phone: u.phone || p.phone,
+							classes: Array.isArray(u.classes) ? u.classes : Array.isArray(u.sections) ? u.sections : p.classes,
+						}));
+					}
+				}
+				// Also hydrate from cached user for immediate UI
 				const raw = await AsyncStorage.getItem('user');
 				if (raw) {
 					const u = JSON.parse(raw);
+					const fallbackPhoto = u?.email ? `https://i.pravatar.cc/200?u=${encodeURIComponent(u.email)}` : undefined;
 					setProfile((p) => ({
 						...p,
 						name: u?.name || u?.fullName || p.name,
 						email: u?.email || p.email,
-						photoUrl: u?.avatar || u?.photoUrl || p.photoUrl,
+						photoUrl: u?.avatar || u?.photoUrl || fallbackPhoto || p.photoUrl,
 						university: u?.university || p.university,
 						department: u?.department || p.department,
 						classes: Array.isArray(u?.classes) ? u.classes : p.classes,
@@ -89,24 +115,36 @@ export default function TeacherSettingsScreen() {
 	return (
 		<ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={{ paddingBottom: 32 }}>
 			{/* Profile Header */}
-			<View style={[styles.card, { backgroundColor: theme.surface }]}>
+			<View style={[styles.card, { backgroundColor: theme.surface }]}> 
 				<View style={styles.profileHeader}>
 					{profile.photoUrl ? (
 						<Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
 					) : (
-						<View style={[styles.avatar, { backgroundColor: theme.primary + '33' }]}> 
+						<View style={[styles.avatar, { backgroundColor: theme.primary + '33', alignItems: 'center', justifyContent: 'center' }]}> 
 							<Text style={[styles.avatarInitial, { color: theme.primary }]}>{profile.name?.charAt(0) || '?'}</Text>
 						</View>
 					)}
 					<View style={{ flex: 1 }}>
-						<Text style={[styles.name, { color: theme.text }]}>{profile.name}</Text>
+						<Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
+							{profile.name}
+						</Text>
 						<View style={styles.row}>
 							<GraduationCap size={16} color={theme.textSecondary} />
-							<Text style={[styles.subtle, { color: theme.textSecondary }]}>{profile.university}</Text>
+							<Text style={[styles.subtle, { color: theme.textSecondary }]} numberOfLines={1}>
+								{profile.university}
+							</Text>
 						</View>
-						<Text style={[styles.subtle, { color: theme.textSecondary }]}>{profile.department}</Text>
-						<Text style={[styles.subtle, { color: theme.textSecondary, marginTop: 6 }]}>{profile.email}</Text>
-						<Text style={[styles.subtle, { color: theme.textSecondary }]}>{profile.phone}</Text>
+						<Text style={[styles.subtle, { color: theme.textSecondary }]} numberOfLines={1}>{profile.department}</Text>
+						{profile.email ? (
+							<Text style={[styles.subtle, { color: theme.textSecondary, marginTop: 6 }]} numberOfLines={1}>
+								{profile.email}
+							</Text>
+						) : null}
+						{profile.phone ? (
+							<Text style={[styles.subtle, { color: theme.textSecondary }]} numberOfLines={1}>
+								{profile.phone}
+							</Text>
+						) : null}
 					</View>
 				</View>
 
@@ -207,16 +245,17 @@ const styles = StyleSheet.create({
 	container: { flex: 1 },
 	card: {
 		borderRadius: 16,
-		padding: 16,
-		margin: 20,
+		padding: 20,
+		marginHorizontal: 20,
+		marginTop: 16,
 		shadowColor: '#000',
 		shadowOpacity: 0.06,
 		shadowRadius: 6,
 		elevation: 2,
 	},
 	profileHeader: { flexDirection: 'row', gap: 16, alignItems: 'center' },
-	avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#EEE' },
-	avatarInitial: { fontSize: 36, fontWeight: '800' },
+	avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#EEE' },
+	avatarInitial: { fontSize: 40, fontWeight: '800' },
 	name: { fontSize: 22, fontWeight: '700' },
 	row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
 	subtle: { fontSize: 14 },
