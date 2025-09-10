@@ -52,9 +52,9 @@ Edugram represents the pinnacle of educational technology, combining **multiling
 
 | Name | Role | Specialization |
 |------|------|----------------|
+| **Garv Vyas** | Lead Developer & Architect | Core platform development, system architecture, API integration |
 | **Qusai Sakerwala** | Lead Backend Developer | Server architecture, API optimization, database design |
 | **Karan Nisar** | Frontend Developer | UI/UX implementation, performance optimization, cross-platform compatibility |
-| **Garv Vyas** | Lead Developer & Architect | Core platform development, system architecture, API integration |
 | **Viral Thakkar** | Full Stack Developer | Feature implementation, testing, performance optimization |
 | **Richa Suryavanshi** | UI/UX Designer | Visual design, user experience research, interface prototyping |
 | **Arunial Pandey** | QA & Documentation | Testing, documentation, user feedback integration |
