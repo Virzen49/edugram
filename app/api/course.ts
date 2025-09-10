@@ -1,4 +1,3 @@
-import { module } from './../../node_modules/webpack/types.d';
 const BASE_URL = 'http://10.103.211.237:3000/api/teacher';
 
 type ApiResult<T = any> = Promise<{ ok: boolean; status: number; data?: T; error?: any }>;
