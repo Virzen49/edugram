@@ -37,3 +37,21 @@ export async function getQuiz(cat_id: number, mod_id: number) {
     return { ok: false, status: 0, error };
   }
 }
+
+export async function generateQuiz(cat_id:number , mod_id:number) {
+  const payload = { cat_id, mod_id };
+  try {
+    const response = await fetch(`${BASE_URL}/createQuiz`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    console.debug('generateQuiz response data:', data);
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    console.error('generateQuiz error:', error);
+    return { ok: false, status: 0, error };
+  }
+}

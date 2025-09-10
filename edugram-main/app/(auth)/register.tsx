@@ -70,7 +70,7 @@ export default function RegisterScreen() {
             <Text style={styles.registerButtonText}>Create Account</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity onPress={() => router.push('/auth/login')}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
             <Text style={styles.loginLink}>Already have an account? Login</Text>
           </TouchableOpacity>
         </View>

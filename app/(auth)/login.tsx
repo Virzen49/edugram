@@ -20,7 +20,11 @@ export default function LoginScreen() {
       setIsSubmitting(true);
       const res = await apiLogin(email, password);
 
-      if (res.ok) {
+      if (res.ok && res.data.role === 'student') {
+        router.replace('/(tabs)');
+      } else if (res.ok && res.data.role === 'teacher') {
+        router.replace('/(teacher)');
+      } else if (res.ok && res.data.role === 'admin') {
         router.replace('/(tabs)');
       } else {
         const message = (res.data && (res.data.message || res.data.error)) || 'Login failed. Please try again.';
@@ -39,14 +43,16 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        {/* Logo image - replace logo.png with your actual logo */}
+        {/* Logo */}
         <Image 
           source={require('@/assets/images/logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
+
         <Text style={[styles.title, { color: theme.text }]}>{t('welcome')}</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('learnPlayAchieve')}</Text>
+
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
@@ -77,7 +83,11 @@ export default function LoginScreen() {
             />
           </View>
           
-          <TouchableOpacity style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled, { backgroundColor: theme.primary }]} onPress={handleLogin} disabled={isSubmitting}>
+          <TouchableOpacity 
+            style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled, { backgroundColor: theme.primary }]} 
+            onPress={handleLogin} 
+            disabled={isSubmitting}
+          >
             {isSubmitting ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
@@ -88,7 +98,6 @@ export default function LoginScreen() {
           <TouchableOpacity>
             <Text style={[styles.forgotPassword, { color: theme.textSecondary }]}>{t('forgotPassword')}</Text>
           </TouchableOpacity>
-        
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -96,113 +105,18 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 200,
-    height: 80,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  errorText: {
-    textAlign: 'center',
-    color: '#DC2626',
-    marginBottom: 12,
-  },
-  form: {
-    gap: 20,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 25,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  loginButton: {
-    paddingVertical: 16,
-    borderRadius: 25,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  loginButtonDisabled: {
-    opacity: 0.7,
-  },
-  loginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  forgotPassword: {
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-  },
-  googleButton: {
-    paddingVertical: 14,
-    borderRadius: 25,
-    alignItems: 'center',
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  googleIcon: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4285F4',
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  schoolButton: {
-    backgroundColor: '#3B82F6',
-    paddingVertical: 14,
-    borderRadius: 25,
-    alignItems: 'center',
-  },
-  schoolButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  container: { flex: 1 },
+  content: { flex: 1, padding: 20, justifyContent: 'center' },
+  logo: { width: 200, height: 80, alignSelf: 'center', marginBottom: 20 },
+  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 40 },
+  errorText: { textAlign: 'center', color: '#DC2626', marginBottom: 12 },
+  form: { gap: 20 },
+  inputGroup: { gap: 8 },
+  label: { fontSize: 16, fontWeight: '500' },
+  input: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 25, fontSize: 16, borderWidth: 1 },
+  loginButton: { paddingVertical: 16, borderRadius: 25, alignItems: 'center', marginTop: 10 },
+  loginButtonDisabled: { opacity: 0.7 },
+  loginButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
+  forgotPassword: { textAlign: 'center', fontSize: 16 },
 });

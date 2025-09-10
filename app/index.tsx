@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -37,6 +40,10 @@ export default function SplashScreen() {
     createDotAnimation(dotAnim1, 0).start();
     createDotAnimation(dotAnim2, 200).start();
     createDotAnimation(dotAnim3, 400).start();
+    // Splash screen delay - 3 seconds then go to login
+    const timer = setTimeout(() => {
+      router.replace('/(auth)/login');
+    }, 3000);
 
     // Phase 1: Initial fade in (0.8s)
     Animated.timing(fadeAnim, {

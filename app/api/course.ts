@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const BASE_URL = 'http://10.103.211.237:3000/api/teacher';
 
 type ApiResult<T = any> = Promise<{ ok: boolean; status: number; data?: T; error?: any }>;
@@ -6,7 +8,7 @@ export async function getCategory(grade: string): ApiResult {
   const payload = { grade };
 
   try {
-    const response = await fetch(`${BASE_URL}/getcategory`, {
+    const response = await fetch(`${BASE_URL}/getCategorys`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -79,6 +81,23 @@ export async function getLectures(cat_id: number, mod_id: number): ApiResult {
       return { ok: response.ok, status: response.status, data: { ...data, uploads } };
     }
 
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    return { ok: false, status: 0, error };
+  }
+}
+
+export async function getTeacher(): ApiResult {
+  
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await fetch(`${BASE_URL}/getTeacher`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`    },
+    });
+
+    const data = await response.json().catch(() => ({}));
+    console.debug('getTeacher response data:', data);
     return { ok: response.ok, status: response.status, data };
   } catch (error) {
     return { ok: false, status: 0, error };
