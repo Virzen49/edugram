@@ -11,7 +11,7 @@ export default function ProfileScreen() {
   const [userStats, setUserStats] = useState({
     badges: 0,
     points: 0,
-    completed: 0,
+    completed: 2,
     rank: 0,
     level: 1,
     weeklyProgress: 0,
@@ -229,7 +229,7 @@ export default function ProfileScreen() {
               <BookOpen size={20} color="#3B82F6" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>{userStats.completed}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('completed')}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t(' Modules\ncompleted')}</Text>
           </View>
         </View>
 
