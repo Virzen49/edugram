@@ -1,42 +1,126 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, RefreshControl } from 'react-native';
 import { Search, Trophy, Award, TrendingUp, Crown, Medal, Star } from 'lucide-react-native';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLeaderboard, getProfile } from '@/app/api/auth';
+
+// Define types for our data based on expected API response
+interface Student {
+  id: number | string;
+  name: string;
+  username?: string;
+  points: number;
+  xp?: number;
+  rank: number;
+  avatar?: string;
+  subject?: string;
+  grade?: string;
+  streak?: number;
+  badges?: number;
+  trend?: 'up' | 'down' | 'same';
+  user_id?: number | string;
+}
+
+interface CurrentUser {
+  id: number | string;
+  name: string;
+  username?: string;
+  points: number;
+  xp?: number;
+  rank: number;
+  avatar?: string;
+  streak?: number;
+  badges?: number;
+}
 
 export default function LeaderboardScreen() {
   const { theme, t } = useApp();
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [students, setStudents] = useState([
-    { id: 1, name: 'Ethan Carter', points: 1300, rank: 1, avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Chemistry', grade: '12', streak: 7, badges: 12, trend: 'up' },
-    { id: 2, name: 'Sophia Lee', points: 1250, rank: 2, avatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Mathematics', grade: '12', streak: 5, badges: 10, trend: 'up' },
-    { id: 3, name: 'Noah Clark', points: 1150, rank: 3, avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Chemistry', grade: '11', streak: 4, badges: 8, trend: 'down' },
-    { id: 4, name: 'Olivia Davis', points: 1050, rank: 4, avatar: 'https://images.pexels.com/photos/1542085/pexels-photo-1542085.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Mathematics', grade: '12', streak: 6, badges: 9, trend: 'up' },
-    { id: 5, name: 'Liam Walker', points: 1000, rank: 5, avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Chemistry', grade: '11', streak: 3, badges: 7, trend: 'same' },
-    { id: 6, name: 'Ava Hall', points: 950, rank: 6, avatar: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Mathematics', grade: '12', streak: 2, badges: 6, trend: 'up' },
-    { id: 7, name: 'Lucas Young', points: 900, rank: 7, avatar: 'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Chemistry', grade: '10', streak: 1, badges: 5, trend: 'down' },
-    { id: 8, name: 'Mia King', points: 850, rank: 8, avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Mathematics', grade: '11', streak: 4, badges: 4, trend: 'up' },
-    { id: 9, name: 'James Wilson', points: 800, rank: 9, avatar: 'https://images.pexels.com/photos/1065084/pexels-photo-1065084.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Chemistry', grade: '10', streak: 2, badges: 3, trend: 'same' },
-    { id: 10, name: 'Emma Brown', points: 750, rank: 10, avatar: 'https://images.pexels.com/photos/1102341/pexels-photo-1102341.jpeg?auto=compress&cs=tinysrgb&w=400', subject: 'Mathematics', grade: '11', streak: 5, badges: 5, trend: 'up' },
-  ]);
-  const [currentUser] = useState({ name: 'You', points: 650, rank: 15, avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400' });
+  const [students, setStudents] = useState<Student[]>([]);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const tabs = ['All', 'Chemistry', 'Mathematics', 'Grade 12', 'Grade 11'];
+  
+  // Load leaderboard data
+  const loadLeaderboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch leaderboard data
+      const leaderboardRes = await getLeaderboard();
+      console.log('Leaderboard response:', leaderboardRes);
+      
+      if (leaderboardRes.ok && leaderboardRes.data) {
+        // Handle both array and object responses
+        let leaderboardData: any[] = [];
+        if (Array.isArray(leaderboardRes.data)) {
+          leaderboardData = leaderboardRes.data;
+        } else if (leaderboardRes.data.leaderboard) {
+          leaderboardData = leaderboardRes.data.leaderboard;
+        } else if (leaderboardRes.data.users) {
+          leaderboardData = leaderboardRes.data.users;
+        }
+        
+        // Format students with proper data mapping
+        const formattedStudents: Student[] = leaderboardData.map((student: any, index: number) => ({
+          id: student.id || student.user_id || index + 1,
+          name: student.name || student.username || `User ${index + 1}`,
+          username: student.username || student.name,
+          points: student.points || student.xp || 0,
+          xp: student.xp || student.points,
+          rank: student.rank || index + 1,
+          avatar: student.avatar || `https://ui-avatars.com/api/?name=${student.name || student.username || 'U'}&background=random`,
+          subject: student.subject || 'General',
+          grade: student.grade || '12',
+          streak: student.streak || 0,
+          badges: student.badges || 0,
+          trend: student.trend || 'same',
+          user_id: student.user_id || student.id
+        }));
+        setStudents(formattedStudents);
+      } else {
+        setError('Failed to load leaderboard data');
+        console.error('Leaderboard API error:', leaderboardRes);
+      }
+      
+      // Fetch current user profile
+      const profileRes = await getProfile();
+      console.log('Profile response:', profileRes);
+      
+      if (profileRes.ok && profileRes.data) {
+        const profile = profileRes.data;
+        setCurrentUser({
+          id: profile.id || profile.user_id || 0,
+          name: profile.name || profile.username || 'You',
+          username: profile.username || profile.name,
+          points: profile.points || profile.xp || 0,
+          xp: profile.xp || profile.points,
+          rank: profile.rank || 0,
+          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${profile.name || profile.username || 'Y'}&background=random`,
+          streak: profile.streak || 0,
+          badges: profile.badges || 0
+        });
+      }
+    } catch (err) {
+      console.error('Error loading leaderboard data:', err);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate real-time updates every 30 seconds
+    loadLeaderboardData();
+    
+    // Set up real-time updates every 30 seconds
     const interval = setInterval(() => {
-      setStudents(prevStudents => 
-        prevStudents.map(student => ({
-          ...student,
-          points: student.points + Math.floor(Math.random() * 10) - 3, // Random point changes
-        })).sort((a, b) => b.points - a.points).map((student, index) => ({
-          ...student,
-          rank: index + 1
-        }))
-      );
+      loadLeaderboardData();
     }, 30000);
     
     return () => clearInterval(interval);
@@ -44,13 +128,13 @@ export default function LeaderboardScreen() {
   
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await loadLeaderboardData();
+    setRefreshing(false);
   };
   
   const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         (student.username && student.username.toLowerCase().includes(searchQuery.toLowerCase()));
     if (activeTab === 'All') return matchesSearch;
     if (activeTab === 'Chemistry' || activeTab === 'Mathematics') return matchesSearch && student.subject === activeTab;
     if (activeTab.startsWith('Grade')) return matchesSearch && student.grade === activeTab.split(' ')[1];
@@ -61,14 +145,38 @@ export default function LeaderboardScreen() {
     if (rank === 1) return <Crown size={24} color="#FFD700" />;
     if (rank === 2) return <Medal size={24} color="#C0C0C0" />;
     if (rank === 3) return <Award size={24} color="#CD7F32" />;
-    return <Text style={[styles.rankNumber, { color: theme.text }]}>#{rank}</Text>;
+    return <Text style={[styles.rankNumber, { color: theme.text }]}>{`#${rank}`}</Text>;
   };
 
-  const getTrendIcon = (trend: string) => {
+  const getTrendIcon = (trend: string | undefined) => {
     if (trend === 'up') return <TrendingUp size={16} color="#10B981" />;
     if (trend === 'down') return <TrendingUp size={16} color="#EF4444" style={{ transform: [{ rotate: '180deg' }] }} />;
     return <View style={styles.trendSame} />;
   };
+
+  // Show loading state
+  if (loading && students.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.text }}>{t('loading') || 'Loading leaderboard...'}</Text>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error && students.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.text }}>{`${t('error') || 'Error'}: ${error}`}</Text>
+        <TouchableOpacity 
+          style={{ marginTop: 20, padding: 10, backgroundColor: theme.primary, borderRadius: 8 }}
+          onPress={loadLeaderboardData}
+        >
+          <Text style={{ color: 'white' }}>{t('retry') || 'Retry'}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView 
@@ -86,20 +194,22 @@ export default function LeaderboardScreen() {
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <View style={styles.headerContent}>
           <Text style={[styles.title, { color: theme.text }]}>{t('leaderboard') || 'Leaderboard'}</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Track your progress & compete with peers</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('xpLeaderboard') || 'Track your progress & compete with peers'}</Text>
         </View>
-        <View style={styles.headerStats}>
-          <View style={[styles.statCard, { backgroundColor: '#10B98120' }]}>
-            <Trophy size={20} color="#10B981" />
-            <Text style={[styles.statNumber, { color: '#10B981' }]}>#{currentUser.rank}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Your Rank</Text>
+        {currentUser && (
+          <View style={styles.headerStats}>
+            <View style={[styles.statCard, { backgroundColor: '#10B98120' }]}>
+              <Trophy size={20} color="#10B981" />
+              <Text style={[styles.statNumber, { color: '#10B981' }]}>{`#${currentUser.rank}`}</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('youRank', { rank: currentUser.rank }) || 'Your Rank'}</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: '#3B82F620' }]}>
+              <Star size={20} color="#3B82F6" />
+              <Text style={[styles.statNumber, { color: '#3B82F6' }]}>{currentUser.points}</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('points') || 'Points'}</Text>
+            </View>
           </View>
-          <View style={[styles.statCard, { backgroundColor: '#3B82F620' }]}>
-            <Star size={20} color="#3B82F6" />
-            <Text style={[styles.statNumber, { color: '#3B82F6' }]}>{currentUser.points}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Points</Text>
-          </View>
-        </View>
+        )}
       </View>
 
       {/* Search Bar */}
@@ -107,7 +217,7 @@ export default function LeaderboardScreen() {
         <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
           <Search size={20} color={theme.textSecondary} />
           <TextInput 
-            placeholder="Search for a student"
+            placeholder={t('searchStudent') || "Search for a student"}
             style={[styles.searchInput, { color: theme.text }]}
             placeholderTextColor={theme.textSecondary}
             value={searchQuery}
@@ -144,7 +254,7 @@ export default function LeaderboardScreen() {
 
       {/* Top 3 Podium */}
       <View style={styles.podiumContainer}>
-        <Text style={[styles.podiumTitle, { color: theme.text }]}>🏆 Top Performers</Text>
+        <Text style={[styles.podiumTitle, { color: theme.text }]}>🏆 {t('topPerformers') || 'Top Performers'}</Text>
         <View style={styles.podium}>
           {filteredStudents.slice(0, 3).map((student, index) => (
             <TouchableOpacity key={student.id} style={[styles.podiumItem, { backgroundColor: theme.surface }]}>
@@ -167,7 +277,7 @@ export default function LeaderboardScreen() {
 
       {/* Leaderboard List */}
       <View style={styles.leaderboardContainer}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>All Rankings</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('allRankings') || 'All Rankings'}</Text>
         {filteredStudents.map((student, index) => (
           <TouchableOpacity key={student.id} style={[styles.studentCard, { backgroundColor: theme.surface }]}>
             <View style={styles.studentLeft}>
@@ -181,16 +291,16 @@ export default function LeaderboardScreen() {
                 <View style={styles.studentMeta}>
                   <Text style={[styles.studentSubject, { color: theme.textSecondary }]}>{student.subject}</Text>
                   <Text style={[styles.dot, { color: theme.textSecondary }]}>•</Text>
-                  <Text style={[styles.studentGrade, { color: theme.textSecondary }]}>Grade {student.grade}</Text>
+                  <Text style={[styles.studentGrade, { color: theme.textSecondary }]}>{`${t('grade') || 'Grade'} ${student.grade}`}</Text>
                 </View>
               </View>
             </View>
             <View style={styles.studentRight}>
               <Text style={[styles.studentPoints, { color: theme.primary }]}>{student.points}</Text>
-              <Text style={[styles.pointsLabel, { color: theme.textSecondary }]}>points</Text>
+              <Text style={[styles.pointsLabel, { color: theme.textSecondary }]}>{t('points')?.toLowerCase() || 'points'}</Text>
               <View style={styles.streakContainer}>
                 <Text style={styles.streakEmoji}>🔥</Text>
-                <Text style={[styles.streakText, { color: '#F59E0B' }]}>{student.streak}d</Text>
+                <Text style={[styles.streakText, { color: '#F59E0B' }]}>{`${student.streak}d`}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -198,19 +308,21 @@ export default function LeaderboardScreen() {
       </View>
 
       {/* Current User Card */}
-      <View style={[styles.currentUserCard, { backgroundColor: '#10B98120' }]}>
-        <View style={styles.currentUserContent}>
-          <Image source={{ uri: currentUser.avatar }} style={styles.currentUserAvatar} />
-          <View style={styles.currentUserInfo}>
-            <Text style={[styles.currentUserName, { color: '#10B981' }]}>{currentUser.name}</Text>
-            <Text style={[styles.currentUserRank, { color: '#059669' }]}>Rank #{currentUser.rank}</Text>
+      {currentUser && (
+        <View style={[styles.currentUserCard, { backgroundColor: '#10B98120' }]}>
+          <View style={styles.currentUserContent}>
+            <Image source={{ uri: currentUser.avatar }} style={styles.currentUserAvatar} />
+            <View style={styles.currentUserInfo}>
+              <Text style={[styles.currentUserName, { color: '#10B981' }]}>{currentUser.name}</Text>
+              <Text style={[styles.currentUserRank, { color: '#059669' }]}>{`${t('rank') || 'Rank'} #${currentUser.rank}`}</Text>
+            </View>
+          </View>
+          <View style={styles.currentUserStats}>
+            <Text style={[styles.currentUserPoints, { color: '#10B981' }]}>{currentUser.points}</Text>
+            <Text style={[styles.currentUserLabel, { color: '#059669' }]}>{t('points')?.toLowerCase() || 'points'}</Text>
           </View>
         </View>
-        <View style={styles.currentUserStats}>
-          <Text style={[styles.currentUserPoints, { color: '#10B981' }]}>{currentUser.points}</Text>
-          <Text style={[styles.currentUserLabel, { color: '#059669' }]}>points</Text>
-        </View>
-      </View>
+      )}
     </ScrollView>
   );
 }
@@ -311,7 +423,7 @@ const styles = StyleSheet.create({
   podium: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'end',
+    alignItems: 'flex-end',
     gap: 8,
   },
   podiumItem: {

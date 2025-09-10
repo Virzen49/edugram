@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
 
 export interface ThemeColors {
   background: string;
@@ -126,6 +128,9 @@ export const translations = {
     grade: 'Grade',
     viewProfile: 'View Profile',
     youRank: 'You - Rank {rank}',
+    topPerformers: 'Top Performers',
+    allRankings: 'All Rankings',
+    rank: 'Rank',
     
     // Common
     cancel: 'Cancel',
@@ -136,6 +141,7 @@ export const translations = {
     loading: 'Loading...',
     error: 'Error',
     success: 'Success',
+    retry: 'Retry',
     
     // Logout
     logoutConfirm: 'Are you sure you want to logout?',
@@ -222,6 +228,9 @@ export const translations = {
     grade: 'ग्रेड',
     viewProfile: 'प्रोफाइल देखें',
     youRank: 'आप - रैंक {rank}',
+    topPerformers: 'शीर्ष प्रदर्शनकर्ता',
+    allRankings: 'सभी रैंकिंग',
+    rank: 'रैंक',
     
     // Common
     cancel: 'रद्द करें',
@@ -232,6 +241,7 @@ export const translations = {
     loading: 'लोड हो रहा है...',
     error: 'त्रुटि',
     success: 'सफलता',
+    retry: 'पुनः प्रयास करें',
     
     // Logout
     logoutConfirm: 'क्या आप वाकई लॉगआउट करना चाहते हैं?',
@@ -318,6 +328,9 @@ export const translations = {
     grade: 'ગ્રેડ',
     viewProfile: 'પ્રોફાઇલ જુઓ',
     youRank: 'તમે - રેન્ક {rank}',
+    topPerformers: 'ટૉપ પરિણામકારી',
+    allRankings: 'સામાન્ય રેન્કિંગ',
+    rank: 'રેન્ક',
     
     // Common
     cancel: 'રદ કરો',
@@ -328,6 +341,7 @@ export const translations = {
     loading: 'લોડ થઈ રહ્યું છે...',
     error: 'ભૂલ',
     success: 'સફળતા',
+    retry: 'પુન: પ્રયા� કરો',
     
     // Logout
     logoutConfirm: 'શું તમે ખરેખર લોગઆઉટ કરવા માંગો છો?',
@@ -335,6 +349,30 @@ export const translations = {
   // Add more languages as needed
   // Add more languages as needed
 };
+
+// Initialize i18next
+if (!i18n.isInitialized) {
+  i18n
+    .use(initReactI18next)
+    .init({
+      resources: {
+        en: {
+          translation: translations.en
+        },
+        hi: {
+          translation: translations.hi
+        },
+        gu: {
+          translation: translations.gu
+        }
+      },
+      lng: 'en',
+      fallbackLng: 'en',
+      interpolation: {
+        escapeValue: false
+      }
+    });
+}
 
 export type Language = keyof typeof translations;
 export type TranslationKey = keyof typeof translations.en;
@@ -374,6 +412,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       }
       if (lang !== null && translations[lang as Language]) {
         setLanguageState(lang as Language);
+        // Update i18next language
+        i18n.changeLanguage(lang as Language);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -394,6 +434,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     try {
       setLanguageState(lang);
       await AsyncStorage.setItem('language', lang);
+      // Update i18next language
+      i18n.changeLanguage(lang);
     } catch (error) {
       console.error('Error saving language:', error);
     }

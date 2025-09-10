@@ -44,6 +44,47 @@ export async function getProfile() {
   }
 }
 
+export async function updateProfileStats(points: number, completed: number) {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) return { ok: false, status: 401, error: 'No token' };
+
+    const response = await fetch(`${BASE_URL}/update-stats`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ points, completed }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    return { ok: false, status: 0, error };
+  }
+}
+
+export async function getLeaderboard() {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) return { ok: false, status: 401, error: 'No token' };
+
+    const response = await fetch(`${BASE_URL}/leaderboard`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    return { ok: false, status: 0, error };
+  }
+}
+
 export async function getToken() {
   return AsyncStorage.getItem('token');
 }

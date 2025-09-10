@@ -1,15 +1,16 @@
-// course.tsx
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useRef, useEffect } from 'react';
-import { router } from 'expo-router';
-import { ChevronDown, ChevronRight, CheckCircle, Circle, PlayCircle, BookOpen, Award, Zap, Star } from 'lucide-react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ChevronDown, ChevronRight, CheckCircle, Circle, PlayCircle, BookOpen, Award, Zap, Star, Calculator, Beaker, Atom, FileText, Video, HelpCircle, TrendingUp, Users, Clock, Target } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCategory, getModules, getLectures } from "../api/course" // import new api funcs
 import { getProfile } from '../api/auth';
 
 export default function CoursesScreen() {
+  const { subject } = useLocalSearchParams<{ subject?: string }>();
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -18,6 +19,15 @@ export default function CoursesScreen() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Clear any filtering when component mounts from tab navigation
+  useEffect(() => {
+    // If there's no subject parameter (direct tab navigation), ensure we show all
+    if (!subject) {
+      // This ensures that when coming from tab navigation, we always show all courses
+      console.debug('Courses loaded from tab navigation - showing all subjects');
+    }
+  }, [subject]);
 
   useEffect(() => {
     loadCompletedLessons();
@@ -118,6 +128,30 @@ export default function CoursesScreen() {
       setLoadingCategories(false);
     }
   };
+
+  // Filter categories based on subject parameter
+  const filteredCategories = categories.filter(category => {
+    if (!subject) {
+      console.debug('No subject filter - showing all categories:', categories.length);
+      return true; // Show all if no subject filter
+    }
+    
+    const categoryName = category.name.toLowerCase();
+    const subjectParam = subject.toLowerCase();
+    
+    console.debug(`Filtering categories for subject: ${subjectParam}, checking category: ${categoryName}`);
+    
+    // Map subject parameters to category names
+    if (subjectParam === 'chemistry') {
+      return categoryName.includes('chemistry') || categoryName.includes('science');
+    } else if (subjectParam === 'mathematics') {
+      return categoryName.includes('math') || categoryName.includes('algebra') || categoryName.includes('geometry');
+    }
+    
+    return true;
+  });
+
+  console.debug('Filtered categories result:', filteredCategories.length, 'out of', categories.length);
 
   // helper to normalize modules payload into array
   const normalizeModulesPayload = (payload: any): any[] => {
@@ -376,36 +410,78 @@ export default function CoursesScreen() {
   const getCategoryIcon = (categoryName: string) => {
     const name = categoryName.toLowerCase();
     if (name.includes('math') || name.includes('algebra') || name.includes('geometry')) {
-      return { icon: '🧮', color: '#8B5CF6', bgColor: '#8B5CF620' };
+      return { 
+        icon: Calculator, 
+        color: '#8B5CF6', 
+        bgColor: '#8B5CF620',
+        gradient: ['#8B5CF6', '#A855F7'] as [string, string]
+      };
     } else if (name.includes('science') || name.includes('chemistry') || name.includes('physics')) {
-      return { icon: '🧪', color: '#10B981', bgColor: '#10B98120' };
+      return { 
+        icon: Beaker, 
+        color: '#10B981', 
+        bgColor: '#10B98120',
+        gradient: ['#10B981', '#059669'] as [string, string]
+      };
     } else if (name.includes('english') || name.includes('language') || name.includes('literature')) {
-      return { icon: '📚', color: '#3B82F6', bgColor: '#3B82F620' };
+      return { 
+        icon: FileText, 
+        color: '#3B82F6', 
+        bgColor: '#3B82F620',
+        gradient: ['#3B82F6', '#2563EB'] as [string, string]
+      };
     } else if (name.includes('history') || name.includes('social')) {
-      return { icon: '🏛️', color: '#F59E0B', bgColor: '#F59E0B20' };
+      return { 
+        icon: Clock, 
+        color: '#F59E0B', 
+        bgColor: '#F59E0B20',
+        gradient: ['#F59E0B', '#D97706'] as [string, string]
+      };
     } else if (name.includes('art') || name.includes('music')) {
-      return { icon: '🎨', color: '#EF4444', bgColor: '#EF444420' };
+      return { 
+        icon: Target, 
+        color: '#EF4444', 
+        bgColor: '#EF444420',
+        gradient: ['#EF4444', '#DC2626'] as [string, string]
+      };
     }
-    return { icon: '📘', color: '#6B7280', bgColor: '#6B728020' };
+    return { 
+      icon: BookOpen, 
+      color: '#6B7280', 
+      bgColor: '#6B728020',
+      gradient: ['#6B7280', '#4B5563'] as [string, string]
+    };
   };
 
   const getModuleIcon = (moduleName: string) => {
     const name = moduleName.toLowerCase();
     if (name.includes('algebra') || name.includes('equation')) {
-      return { icon: '➕', color: '#8B5CF6' };
+      return { icon: Calculator, color: '#8B5CF6', gradient: ['#8B5CF6', '#A855F7'] as [string, string] };
     } else if (name.includes('geometry') || name.includes('shape')) {
-      return { icon: '📐', color: '#3B82F6' };
+      return { icon: TrendingUp, color: '#3B82F6', gradient: ['#3B82F6', '#2563EB'] as [string, string] };
     } else if (name.includes('chemistry') || name.includes('element')) {
-      return { icon: '⚗️', color: '#10B981' };
+      return { icon: Atom, color: '#10B981', gradient: ['#10B981', '#059669'] as [string, string] };
     } else if (name.includes('physics') || name.includes('force')) {
-      return { icon: '⚡', color: '#F59E0B' };
+      return { icon: Zap, color: '#F59E0B', gradient: ['#F59E0B', '#D97706'] as [string, string] };
     }
-    return { icon: '📖', color: '#6B7280' };
+    return { icon: FileText, color: '#6B7280', gradient: ['#6B7280', '#4B5563'] as [string, string] };
   };
 
   const navigateToLesson = (lesson: any, categoryId: string | number, moduleId: string | number) => {
     // If this is a quiz, go to quiz screen (existing behavior)
     if (lesson.type === 'quiz') {
+      // For the specific quizzes mentioned in the request:
+      // Atoms-Practice Quiz (Chemistry) - subjectId=1, moduleId=1
+      // Algebra Practice Quiz (Mathematics) - subjectId=2, moduleId=2
+      if (categoryId === 1 && moduleId === 1) {
+        router.push(`/quiz?subjectId=1&moduleId=1`);
+        return;
+      } else if (categoryId === 2 && moduleId === 2) {
+        router.push(`/quiz?subjectId=2&moduleId=2`);
+        return;
+      }
+      
+      // Default quiz navigation
       const lessonId = encodeURIComponent(lesson.id);
       router.push(`/quiz?lessonId=${lessonId}&type=quiz&subjectId=${categoryId}&moduleId=${moduleId}`);
       return;
@@ -437,26 +513,65 @@ export default function CoursesScreen() {
       {/* Enhanced Header */}
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <View style={styles.headerContent}>
-          <Text style={[styles.title, { color: theme.text }]}>{t('courses')}</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Learn and grow with interactive content</Text>
+          <Text style={[styles.title, { color: theme.text }]}>
+            {subject ? 
+              (subject === 'chemistry' ? 'Chemistry Courses' : 
+               subject === 'mathematics' ? 'Mathematics Courses' : 
+               t('courses')) : 
+              t('courses')
+            }
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            {subject ? 
+              `Browse ${subject} courses and modules` :
+              'Learn and grow with interactive content'
+            }
+          </Text>
+          {subject && (
+            <TouchableOpacity 
+              style={[styles.showAllButton, { backgroundColor: theme.primary + '15' }]}
+              onPress={() => router.push('/(tabs)/courses')}
+            >
+              <Text style={[styles.showAllText, { color: theme.primary }]}>Show All Subjects</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.headerStats}>
           <View style={[styles.statCard, { backgroundColor: theme.primary + '15' }]}>
             <Award size={16} color={theme.primary} />
-            <Text style={[styles.statNumber, { color: theme.primary }]}>{categories.length}</Text>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Subjects</Text>
+            <Text style={[styles.statNumber, { color: theme.primary }]}>{filteredCategories.length}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+              {subject ? 'Categories' : 'Subjects'}
+            </Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: '#10B981' + '15' }]}>
             <Zap size={16} color={'#10B981'} />
             <Text style={[styles.statNumber, { color: '#10B981' }]}>
-              {categories.reduce((total, cat) => total + cat.subjects.length, 0)}
+              {filteredCategories.reduce((total, cat) => total + cat.subjects.length, 0)}
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Modules</Text>
           </View>
         </View>
       </View>
 
-    {categories.map((category, categoryIndex) => {
+    {filteredCategories.length === 0 && !loadingCategories ? (
+      <View style={styles.noResultsContainer}>
+        <BookOpen size={48} color={theme.textSecondary} />
+        <Text style={[styles.noResultsTitle, { color: theme.text }]}>No courses found</Text>
+        <Text style={[styles.noResultsSubtitle, { color: theme.textSecondary }]}>
+          {subject ? `No ${subject} courses available yet` : 'No courses available yet'}
+        </Text>
+        {subject && (
+          <TouchableOpacity 
+            style={[styles.showAllButton, { backgroundColor: theme.primary, marginTop: 16 }]}
+            onPress={() => router.push('/(tabs)/courses')}
+          >
+            <Text style={[styles.showAllText, { color: 'white' }]}>View All Subjects</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    ) : (
+      filteredCategories.map((category, categoryIndex) => {
       const isCategoryExpanded = expandedSubject === String(category.id);
       const categoryAnimatedValue = getAnimatedValue(`subject-${category.id}`);
       const categoryStyle = getCategoryIcon(category.name);
@@ -476,14 +591,17 @@ export default function CoursesScreen() {
             onPress={() => toggleSubject(String(category.id), category.id)}
           >
             <View style={styles.subjectHeader}>
-              <View
+              <LinearGradient
+                colors={categoryStyle.gradient}
                 style={[
                   styles.subjectIcon,
-                  { backgroundColor: categoryStyle.bgColor },
+                  { shadowColor: categoryStyle.color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
                 ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.subjectEmoji}>{categoryStyle.icon}</Text>
-              </View>
+                <categoryStyle.icon size={32} color="white" strokeWidth={2.5} />
+              </LinearGradient>
               <View style={styles.subjectInfo}>
                 <Text style={[styles.subjectName, { color: theme.text }]}>
                   {category.name}
@@ -564,9 +682,17 @@ export default function CoursesScreen() {
                     onPress={() => toggleModule(String(module.id), category.id)}
                   >
                     <View style={styles.moduleHeader}>
-                      <View style={[styles.moduleIcon, { backgroundColor: moduleStyle.color + '15' }]}>
-                        <Text style={[styles.moduleEmoji, { color: moduleStyle.color }]}>{moduleStyle.icon}</Text>
-                      </View>
+                      <LinearGradient
+                        colors={moduleStyle.gradient}
+                        style={[
+                          styles.moduleIcon,
+                          { shadowColor: moduleStyle.color, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
+                        ]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <moduleStyle.icon size={20} color="white" strokeWidth={2.5} />
+                      </LinearGradient>
                       <View style={styles.moduleInfo}>
                         <Text style={[styles.moduleName, { color: theme.text }]}>
                           {module.name}
@@ -618,7 +744,8 @@ export default function CoursesScreen() {
                       module.lessons.map((lesson: any, lessonIndex: number) => {
                         const isCompleted = completedLessons.includes(lesson.id);
                         const lessonTypeColor = lesson.type === 'quiz' ? '#8B5CF6' : lesson.type === 'lesson' ? '#3B82F6' : '#10B981';
-                        const lessonIcon = lesson.type === 'quiz' ? '🧩' : lesson.type === 'lesson' ? '▶️' : '📝';
+                        const lessonIconComponent = lesson.type === 'quiz' ? HelpCircle : lesson.type === 'lesson' ? Video : FileText;
+                        const lessonGradient = lesson.type === 'quiz' ? ['#8B5CF6', '#A855F7'] : lesson.type === 'lesson' ? ['#3B82F6', '#2563EB'] : ['#10B981', '#059669'];
                         
                         return (
                           <TouchableOpacity
@@ -640,12 +767,17 @@ export default function CoursesScreen() {
                             }
                           >
                             <View style={styles.lessonContent}>
-                              <View style={[
-                                styles.lessonIconContainer,
-                                { backgroundColor: (isCompleted ? '#10B981' : lessonTypeColor) + '15' }
-                              ]}>
-                                <Text style={styles.lessonEmoji}>{lessonIcon}</Text>
-                              </View>
+                              <LinearGradient
+                                colors={isCompleted ? ['#10B981', '#059669'] as [string, string] : lessonGradient as [string, string]}
+                                style={[
+                                  styles.lessonIconContainer,
+                                  { shadowColor: isCompleted ? '#10B981' : lessonTypeColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3 }
+                                ]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                              >
+                                {React.createElement(lessonIconComponent, { size: 16, color: "white", strokeWidth: 2.5 })}
+                              </LinearGradient>
                               <View style={styles.lessonInfo}>
                                 <Text style={[styles.lessonName, { color: theme.text }]}>
                                   {lesson.name}
@@ -664,14 +796,18 @@ export default function CoursesScreen() {
                               </View>
                               <View style={[
                                 styles.lessonAction,
-                                { backgroundColor: (isCompleted ? '#10B981' : lessonTypeColor) + '15' }
+                                { 
+                                  backgroundColor: (isCompleted ? '#10B981' : lessonTypeColor) + '15',
+                                  borderWidth: 1.5,
+                                  borderColor: isCompleted ? '#10B981' : lessonTypeColor,
+                                }
                               ]}>
                                 {isCompleted ? (
-                                  <CheckCircle size={16} color={'#10B981'} />
+                                  <CheckCircle size={16} color={'#10B981'} strokeWidth={2.5} />
                                 ) : lesson.type === 'quiz' ? (
-                                  <Text style={[styles.actionText, { color: lessonTypeColor }]}>Start</Text>
+                                  <HelpCircle size={16} color={lessonTypeColor} strokeWidth={2.5} />
                                 ) : (
-                                  <PlayCircle size={16} color={lessonTypeColor} />
+                                  <PlayCircle size={16} color={lessonTypeColor} strokeWidth={2.5} />
                                 )}
                               </View>
                             </View>
@@ -692,7 +828,8 @@ export default function CoursesScreen() {
           </Animated.View>
         </View>
       );
-    })}
+    }))
+    }
   </ScrollView>
 );
 }
@@ -712,6 +849,36 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     marginBottom: 20,
+  },
+  showAllButton: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  showAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  noResultsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  noResultsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  noResultsSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   title: { 
     fontSize: 32, 
@@ -767,7 +934,8 @@ const styles = StyleSheet.create({
     borderRadius: 28, 
     alignItems: 'center', 
     justifyContent: 'center', 
-    marginRight: 16 
+    marginRight: 16,
+    elevation: 8,
   },
   subjectEmoji: { 
     fontSize: 28 
@@ -826,6 +994,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    elevation: 6,
   },
   moduleEmoji: {
     fontSize: 18,
@@ -900,28 +1069,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    elevation: 4,
   },
-  lessonEmoji: {
-    fontSize: 16,
+  lessonInfo: {
+    flex: 1,
   },
-  lessonIcon: { 
-    marginRight: 12 
-  },
-  lessonInfo: { 
-    flex: 1 
-  },
-  lessonName: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    marginBottom: 4 
+  lessonName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   lessonMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  lessonType: { 
-    fontSize: 11,
+  lessonType: {
+    fontSize: 12,
     fontWeight: '500',
   },
   completedBadge: {
@@ -934,14 +1098,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   lessonAction: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  actionText: {
-    fontSize: 11,
-    fontWeight: '700',
   },
 });

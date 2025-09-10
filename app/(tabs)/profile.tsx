@@ -3,7 +3,7 @@ import { ArrowLeft, Share, Trophy, Award, Target, Calendar, TrendingUp, Star, Bo
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
-import { getProfile } from '../api/auth';
+import { getProfile, updateProfileStats } from '../api/auth';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
@@ -42,6 +42,19 @@ export default function ProfileScreen() {
         const res = await getProfile()
         setProfile(res.data);
         
+        // Update user stats from profile data
+        if (res.data) {
+          setUserStats({
+            badges: res.data.badges || 0,
+            points: res.data.points || 0,
+            completed: res.data.completed || 0,
+            rank: res.data.rank || 99,
+            level: calculateLevel(res.data.points || 0),
+            weeklyProgress: res.data.weeklyProgress || 0,
+            streak: res.data.streak || 0
+          });
+        }
+        
         // Fetch user stats/progress from backend if available
         try {
           const statsResponse = await fetch(`http://10.103.211.237:3000/api/user/stats`, {
@@ -65,51 +78,27 @@ export default function ProfileScreen() {
               streak: statsData.streak || 0
             });
           } else {
-            // If stats API doesn't exist, initialize with zeros
-            console.log('Stats API not available, using default values');
-            setUserStats({
-              badges: 0,
-              points: 0,
-              completed: 0,
-              rank: 99,
-              level: 1,
-              weeklyProgress: 0,
-              streak: 0
-            });
+            // If stats API doesn't exist, use profile data
+            console.log('Stats API not available, using profile data');
           }
         } catch (statsError) {
-          console.log('Stats API error, using default values:', statsError);
-          // Use default values if stats API is not available
-          setUserStats({
-            badges: 0,
-            points: 0,
-            completed: 0,
-            rank: 99,
-            level: 1,
-            weeklyProgress: 0,
-            streak: 0
-          });
+          console.log('Stats API error, using profile data:', statsError);
         }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      // Set default values on error
-      setUserStats({
-        badges: 0,
-        points: 0,
-        completed: 0,
-        rank: 99,
-        level: 1,
-        weeklyProgress: 0,
-        streak: 0
-      });
     } finally {
       setLoading(false);
     }
   };
 
+  // Add effect to update profile periodically
   useEffect(() => {
-    getProfileData();
+    const interval = setInterval(() => {
+      getProfileData();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Dynamic achievements based on user progress

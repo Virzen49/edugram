@@ -1,10 +1,12 @@
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Alert, Animated } from 'react-native';
-import { Bell, Settings, User, LogOut, Trophy, Star, TrendingUp, Type, Grid3X3 } from 'lucide-react-native';
+import { Bell, Settings, User, LogOut, Trophy, Star, TrendingUp, Type, Grid3X3, Calculator, Beaker, FileText } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
-import { getProfile } from '../api/auth';
+import { getProfile, updateProfileStats } from '../api/auth';
 
 
 
@@ -13,6 +15,7 @@ export default function HomeScreen() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [showSubjectSelection, setShowSubjectSelection] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState({ xp: 0, rank: 0, level: 1 });
   const router = useRouter();
   const { theme, t } = useApp();
 
@@ -63,6 +66,15 @@ export default function HomeScreen() {
         const res = await getProfile()
         console.log('Profile data:', res);
         setProfile(res.data);
+        
+        // Update leaderboard data
+        if (res.data) {
+          setLeaderboardData({
+            xp: res.data.points || 0,
+            rank: res.data.rank || 0,
+            level: res.data.level || 1
+          });
+        }
       }catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -136,9 +148,16 @@ export default function HomeScreen() {
   };
 
   const handleSubjectSelection = (subject: string) => {
+    if (selectedGame === 'hangman') {
+      router.push(`/game?type=hangman&subject=${subject}`);
+    } else if (selectedGame === 'puzzle') {
+      router.push(`/puzzle?subject=${subject}`);
+    } else if (selectedGame === 'sudoku') {
+      router.push(`/sudoku?subject=${subject}`);
+    } else if (selectedGame === 'riddle') {
+      router.push(`/riddle?subject=${subject}`);
+    }
     setShowSubjectSelection(false);
-    // Navigate to game screen with game type and subject
-    router.push(`/game?type=${selectedGame}&subject=${subject}` as any);
   };
 
   const handleCloseSubjectSelection = () => {
@@ -149,6 +168,23 @@ export default function HomeScreen() {
   useEffect(() => {
     getProfileData();
   }, []);
+
+  // Add effect to update profile when games are completed
+  useEffect(() => {
+    const updateProfileListener = () => {
+      getProfileData();
+    };
+    
+    // Add event listener for profile updates (this would be triggered from games)
+    // In a real app, you might use a global state management solution or WebSocket
+    // For now, we'll just refresh the profile data periodically
+    const interval = setInterval(() => {
+      getProfileData();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
@@ -240,7 +276,7 @@ export default function HomeScreen() {
           <View style={[styles.subjectSelectionModal, { backgroundColor: theme.surface }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>
-                Choose Subject for {selectedGame === 'hangman' ? 'Hangman' : 'Sudoku'}
+                Choose Subject for {selectedGame === 'hangman' ? 'Hangman' : selectedGame === 'puzzle' ? 'Puzzle' : selectedGame === 'riddle' ? 'Riddle' : 'Sudoku'}
               </Text>
               <TouchableOpacity 
                 style={styles.closeButton}
@@ -251,7 +287,7 @@ export default function HomeScreen() {
             </View>
             
             <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Select a subject to play {selectedGame === 'hangman' ? 'word guessing game' : 'number puzzle'}
+              Select a subject to play {selectedGame === 'hangman' ? 'word guessing game' : selectedGame === 'puzzle' ? 'educational puzzle' : selectedGame === 'riddle' ? 'brain teaser' : 'logic puzzle'}
             </Text>
             
             <View style={styles.subjectOptionsGrid}>
@@ -270,7 +306,7 @@ export default function HomeScreen() {
                   </Text>
                 </TouchableOpacity>
               ) : (
-                // Both subjects for Sudoku
+                // Both subjects for other games
                 <>
                   <TouchableOpacity 
                     style={[styles.subjectOption, { backgroundColor: theme.background }]}
@@ -281,7 +317,7 @@ export default function HomeScreen() {
                     </View>
                     <Text style={[styles.subjectOptionName, { color: theme.text }]}>Chemistry</Text>
                     <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
-                      Chemistry facts
+                      {selectedGame === 'riddle' ? 'Chemistry riddles' : selectedGame === 'puzzle' ? 'Chemistry facts' : 'Chemistry puzzles'}
                     </Text>
                   </TouchableOpacity>
                   
@@ -294,7 +330,7 @@ export default function HomeScreen() {
                     </View>
                     <Text style={[styles.subjectOptionName, { color: theme.text }]}>Mathematics</Text>
                     <Text style={[styles.subjectOptionDesc, { color: theme.textSecondary }]}>
-                      Number puzzles
+                      {selectedGame === 'riddle' ? 'Math riddles' : selectedGame === 'puzzle' ? 'Number puzzles' : 'Logic puzzles'}
                     </Text>
                   </TouchableOpacity>
                 </>
@@ -309,10 +345,17 @@ export default function HomeScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activitiesScroll}>
           <TouchableOpacity 
             style={[styles.activityCard, { backgroundColor: '#10B981' }]}
-            onPress={() => router.push('/(tabs)/courses')}
+            onPress={() => router.push('/quiz?subjectId=1&moduleId=1')}
           >
             <View style={styles.activityImageContainer}>
-              <Text style={styles.activityEmoji}>⚛️</Text>
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                style={styles.activityIconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Beaker size={24} color="white" strokeWidth={2.5} />
+              </LinearGradient>
               <View style={styles.activityBadge}>
                 <Text style={styles.activityBadgeText}>Quiz</Text>
               </View>
@@ -327,10 +370,17 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.activityCard, { backgroundColor: '#059669' }]}
-            onPress={() => router.push('/(tabs)/courses')}
+            onPress={() => router.push('/quiz?subjectId=2&moduleId=2')}
           >
             <View style={styles.activityImageContainer}>
-              <Text style={styles.activityEmoji}>📐</Text>
+              <LinearGradient
+                colors={['#8B5CF6', '#A855F7']}
+                style={styles.activityIconGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Calculator size={24} color="white" strokeWidth={2.5} />
+              </LinearGradient>
               <View style={styles.activityBadge}>
                 <Text style={styles.activityBadgeText}>Quiz</Text>
               </View>
@@ -351,20 +401,30 @@ export default function HomeScreen() {
         <View style={styles.subjectsGrid}>
           <TouchableOpacity 
             style={[styles.subjectCard, { backgroundColor: theme.surface }]}
-            onPress={() => router.push('/(tabs)/courses')}
+            onPress={() => router.push('/(tabs)/courses?subject=chemistry')}
           >
-            <View style={[styles.subjectIcon, { backgroundColor: theme.border }]}>
-              <Text style={styles.subjectEmoji}>⚛️</Text>
-            </View>
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              style={[styles.subjectIcon, { backgroundColor: theme.border }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Beaker size={24} color="white" strokeWidth={2.5} />
+            </LinearGradient>
             <Text style={[styles.subjectName, { color: theme.text }]}>{t('chemistry')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.subjectCard, { backgroundColor: theme.surface }]}
-            onPress={() => router.push('/(tabs)/courses')}
+            onPress={() => router.push('/(tabs)/courses?subject=mathematics')}
           >
-            <View style={[styles.subjectIcon, { backgroundColor: theme.border }]}>
-              <Text style={styles.subjectEmoji}>📐</Text>
-            </View>
+            <LinearGradient
+              colors={['#8B5CF6', '#A855F7']}
+              style={[styles.subjectIcon, { backgroundColor: theme.border }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Calculator size={24} color="white" strokeWidth={2.5} />
+            </LinearGradient>
             <Text style={[styles.subjectName, { color: theme.text }]}>{t('mathematics')}</Text>
           </TouchableOpacity>
         </View>
@@ -392,7 +452,17 @@ export default function HomeScreen() {
               <Grid3X3 size={28} color="#3B82F6" />
             </View>
             <Text style={[styles.gameName, { color: theme.text }]}>Sudoku</Text>
-            <Text style={[styles.gameDescription, { color: theme.textSecondary }]}>Number puzzle</Text>
+            <Text style={[styles.gameDescription, { color: theme.textSecondary }]}>Logic puzzle</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.gameCard, { backgroundColor: theme.surface }]}
+            onPress={() => handleGameSelection('riddle')}
+          >
+            <View style={[styles.gameIcon, { backgroundColor: '#F59E0B20' }]}>
+              <FileText size={28} color="#F59E0B" />
+            </View>
+            <Text style={[styles.gameName, { color: theme.text }]}>Riddle</Text>
+            <Text style={[styles.gameDescription, { color: theme.textSecondary }]}>Solve riddles</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -426,15 +496,15 @@ export default function HomeScreen() {
           
           <View style={styles.levelSection}>
             <View style={styles.levelBadge}>
-              <Text style={styles.levelNumber}>5</Text>
+              <Text style={styles.levelNumber}>{leaderboardData.level}</Text>
             </View>
-            <Text style={[styles.levelText, { color: '#064E3B' }]}>Level 5</Text>
+            <Text style={[styles.levelText, { color: '#064E3B' }]}>Level {leaderboardData.level}</Text>
           </View>
           
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <TrendingUp size={16} color="#10B981" />
-              <Text style={[styles.statValue, { color: '#059669' }]}>1200 XP</Text>
+              <Text style={[styles.statValue, { color: '#059669' }]}>{leaderboardData.xp} XP</Text>
               <Text style={[styles.statLabel, { color: '#6B7280' }]}>Experience</Text>
             </View>
             
@@ -442,7 +512,7 @@ export default function HomeScreen() {
             
             <View style={styles.statItem}>
               <Trophy size={16} color="#10B981" />
-              <Text style={[styles.statValue, { color: '#059669' }]}>#12</Text>
+              <Text style={[styles.statValue, { color: '#059669' }]}>#{leaderboardData.rank}</Text>
               <Text style={[styles.statLabel, { color: '#6B7280' }]}>Class Rank</Text>
             </View>
           </View>
@@ -451,7 +521,7 @@ export default function HomeScreen() {
             <View style={styles.progressBar}>
               <View style={[styles.progressBarFill, { width: '60%' }]} />
             </View>
-            <Text style={[styles.progressBarText, { color: '#6B7280' }]}>600 XP to Level 6</Text>
+            <Text style={[styles.progressBarText, { color: '#6B7280' }]}>600 XP to Level {leaderboardData.level + 1}</Text>
           </View>
         </View>
       </View>
@@ -574,9 +644,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  activityEmoji: {
-    fontSize: 32,
-    opacity: 0.8,
+  activityIconGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   activityBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -638,11 +716,15 @@ const styles = StyleSheet.create({
   subjectIcon: {
     width: 48,
     height: 48,
-    backgroundColor: '#F3F4F6',
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   subjectEmoji: {
     fontSize: 24,

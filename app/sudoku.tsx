@@ -3,173 +3,176 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Animated, 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Type, Grid3X3, RefreshCw, Award, Zap, AlertCircle, CheckCircle, XCircle, Beaker, Calculator, FileText, Target, Atom, Star, TrendingUp, Clock } from 'lucide-react-native';
+import { ArrowLeft, Grid3X3, RefreshCw, Award, Zap, AlertCircle, CheckCircle, XCircle, Beaker, Calculator, Target, Atom, TrendingUp } from 'lucide-react-native';
 import { updateProfileStats } from './api/auth';
 
 const { width, height } = Dimensions.get('window');
 
-// Game Data Structure
-const GAME_SUBJECTS = {
-  chemistry: {
-    name: 'Chemistry',
-    icon: Beaker,
-    gradient: ['#10B981', '#059669'],
-    modules: {
-      atoms: {
-        name: 'Atoms',
-        icon: Atom,
-        gradient: ['#8B5CF6', '#A855F7'],
-        questions: [
-          {
-            word: 'ELECTRON',
-            hint: 'Negatively charged subatomic particle that orbits the nucleus',
-            definition: 'A stable subatomic particle with negative electric charge',
-            difficulty: 'medium'
-          },
-          {
-            word: 'PROTON',
-            hint: 'Positively charged particle found in the nucleus of an atom',
-            definition: 'A stable subatomic particle with positive electric charge',
-            difficulty: 'easy'
-          },
-          {
-            word: 'NEUTRON',
-            hint: 'Neutral subatomic particle with no electric charge',
-            definition: 'A subatomic particle with no net electric charge',
-            difficulty: 'easy'
-          },
-          {
-            word: 'NUCLEUS',
-            hint: 'The dense central core of an atom containing protons and neutrons',
-            definition: 'The positively charged central core of an atom',
-            difficulty: 'medium'
-          },
-          {
-            word: 'ATOM',
-            hint: 'The smallest unit of ordinary matter that forms a chemical element',
-            definition: 'The basic unit of a chemical element',
-            difficulty: 'easy'
-          },
-          {
-            word: 'ELEMENT',
-            hint: 'A pure substance consisting of only one type of atom',
-            definition: 'A substance that cannot be broken down into simpler substances',
-            difficulty: 'medium'
-          },
-          {
-            word: 'ISOTOPE',
-            hint: 'Atoms of the same element with different numbers of neutrons',
-            definition: 'Variants of an element with the same number of protons but different neutrons',
-            difficulty: 'hard'
-          },
-          {
-            word: 'ORBITAL',
-            hint: 'The region around the nucleus where electrons are likely to be found',
-            definition: 'A mathematical function describing the wave-like behavior of electrons',
-            difficulty: 'hard'
-          },
-          {
-            word: 'VALENCE',
-            hint: 'The outermost electron shell of an atom',
-            definition: 'The combining capacity of an element',
-            difficulty: 'hard'
-          },
-          {
-            word: 'MOLECULE',
-            hint: 'Two or more atoms bonded together',
-            definition: 'A group of atoms bonded together representing the smallest unit of a compound',
-            difficulty: 'medium'
-          }
-        ]
+// Generate a simple Sudoku puzzle
+const generateSudokuPuzzle = () => {
+  // Predefined Sudoku puzzles for Chemistry (Atoms) and Mathematics (Algebra)
+  const puzzles = {
+    chemistry: {
+      name: 'Chemistry Sudoku',
+      icon: Beaker,
+      gradient: ['#10B981', '#059669'],
+      modules: {
+        atoms: {
+          name: 'Atoms',
+          icon: Atom,
+          gradient: ['#8B5CF6', '#A855F7'],
+          grids: [
+            {
+              id: 1,
+              difficulty: 'easy',
+              initialGrid: [
+                ['H', 'Li', 'Be', '', '', '', 'C', 'N', 'O'],
+                ['F', '', '', 'Ne', 'Na', 'Mg', '', '', ''],
+                ['', 'Al', 'Si', '', '', '', 'P', 'S', 'Cl'],
+                ['', '', '', 'Ar', 'K', 'Ca', '', '', 'Sc'],
+                ['Ti', '', '', '', 'V', '', '', 'Cr', 'Mn'],
+                ['Fe', 'Co', 'Ni', '', '', 'Cu', 'Zn', 'Ga', 'Ge'],
+                ['As', 'Se', 'Br', '', '', '', 'Kr', 'Rb', 'Sr'],
+                ['', 'Y', 'Zr', 'Nb', 'Mo', '', '', 'Tc', 'Ru'],
+                ['Rh', 'Pd', 'Ag', 'Cd', '', '', 'In', 'Sn', 'Sb']
+              ],
+              solutionGrid: [
+                ['H', 'Li', 'Be', 'B', 'C', 'N', 'C', 'N', 'O'],
+                ['F', 'He', 'Ne', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P'],
+                ['C', 'Al', 'Si', 'P', 'S', 'Cl', 'P', 'S', 'Cl'],
+                ['K', 'Ar', 'Ca', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V'],
+                ['Ti', 'Cr', 'Mn', 'Fe', 'V', 'Co', 'Ni', 'Cr', 'Mn'],
+                ['Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Cu', 'Zn', 'Ga', 'Ge'],
+                ['As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Kr', 'Rb', 'Sr'],
+                ['Y', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Tc', 'Ru'],
+                ['Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'In', 'Sn', 'Sb']
+              ],
+              symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb'],
+              hint: 'Fill the grid with chemical element symbols so that each row, column, and 3x3 box contains all symbols without repetition',
+              explanation: 'This is a chemistry-themed Sudoku where each cell contains a chemical element symbol. The rules are the same as traditional Sudoku but with element symbols instead of numbers.'
+            },
+            {
+              id: 2,
+              difficulty: 'medium',
+              initialGrid: [
+                ['H', '', 'Li', 'Be', 'B', '', 'C', 'N', ''],
+                ['', 'He', '', '', 'C', 'N', 'O', 'F', 'Ne'],
+                ['Na', 'Mg', 'Al', 'Si', '', 'P', 'S', 'Cl', 'Ar'],
+                ['K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co'],
+                ['Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr'],
+                ['Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh'],
+                ['Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe'],
+                ['Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu'],
+                ['Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf']
+              ],
+              solutionGrid: [
+                ['H', 'He', 'Li', 'Be', 'B', 'C', 'C', 'N', 'O'],
+                ['F', 'He', 'Ne', 'Na', 'C', 'N', 'O', 'F', 'Ne'],
+                ['Na', 'Mg', 'Al', 'Si', 'P', 'P', 'S', 'Cl', 'Ar'],
+                ['K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co'],
+                ['Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr'],
+                ['Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh'],
+                ['Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe'],
+                ['Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu'],
+                ['Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf']
+              ],
+              symbols: ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf'],
+              hint: 'Complete the periodic table Sudoku with element symbols',
+              explanation: 'Each row, column, and 3x3 box must contain unique element symbols from the periodic table.'
+            }
+          ]
+        }
+      }
+    },
+    mathematics: {
+      name: 'Mathematics Sudoku',
+      icon: Calculator,
+      gradient: ['#3B82F6', '#2563EB'],
+      modules: {
+        algebra: {
+          name: 'Algebra',
+          icon: TrendingUp,
+          gradient: ['#8B5CF6', '#A855F7'],
+          grids: [
+            {
+              id: 1,
+              difficulty: 'easy',
+              initialGrid: [
+                ['x', 'y', 'z', '', '', '', 'a', 'b', 'c'],
+                ['d', '', '', 'e', 'f', 'g', '', '', ''],
+                ['', 'h', 'i', '', '', '', 'j', 'k', 'l'],
+                ['', '', '', 'm', 'n', 'o', '', '', 'p'],
+                ['q', '', '', '', 'r', '', '', 's', 't'],
+                ['u', 'v', 'w', '', '', 'x', 'y', 'z', 'a'],
+                ['b', 'c', 'd', '', '', '', 'e', 'f', 'g'],
+                ['', 'h', 'i', 'j', 'k', '', '', 'l', 'm'],
+                ['n', 'o', 'p', 'q', '', '', 'r', 's', 't']
+              ],
+              solutionGrid: [
+                ['x', 'y', 'z', 'a', 'b', 'c', 'a', 'b', 'c'],
+                ['d', 'e', 'f', 'e', 'f', 'g', 'h', 'i', 'j'],
+                ['g', 'h', 'i', 'j', 'k', 'l', 'j', 'k', 'l'],
+                ['m', 'n', 'o', 'm', 'n', 'o', 'p', 'q', 'r'],
+                ['q', 'r', 's', 'p', 'r', 's', 't', 's', 't'],
+                ['u', 'v', 'w', 't', 'u', 'x', 'y', 'z', 'a'],
+                ['b', 'c', 'd', 'v', 'w', 'x', 'e', 'f', 'g'],
+                ['h', 'h', 'i', 'j', 'k', 'l', 'm', 'l', 'm'],
+                ['n', 'o', 'p', 'q', 'r', 's', 'r', 's', 't']
+              ],
+              symbols: ['x', 'y', 'z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w'],
+              hint: 'Fill the grid with algebraic variables so that each row, column, and 3x3 box contains all symbols without repetition',
+              explanation: 'This is a mathematics-themed Sudoku where each cell contains an algebraic variable. The rules are the same as traditional Sudoku but with variables instead of numbers.'
+            },
+            {
+              id: 2,
+              difficulty: 'medium',
+              initialGrid: [
+                ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι'],
+                ['κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ'],
+                ['τ', 'υ', 'φ', 'χ', 'ψ', 'ω', 'α', 'β', 'γ'],
+                ['δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ'],
+                ['ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ'],
+                ['χ', 'ψ', 'ω', 'α', 'β', 'γ', 'δ', 'ε', 'ζ'],
+                ['η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο'],
+                ['π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω'],
+                ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι']
+              ],
+              solutionGrid: [
+                ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι'],
+                ['κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ'],
+                ['τ', 'υ', 'φ', 'χ', 'ψ', 'ω', 'α', 'β', 'γ'],
+                ['δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ'],
+                ['ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ'],
+                ['χ', 'ψ', 'ω', 'α', 'β', 'γ', 'δ', 'ε', 'ζ'],
+                ['η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο'],
+                ['π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω'],
+                ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι']
+              ],
+              symbols: ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω'],
+              hint: 'Complete the Greek alphabet Sudoku with mathematical symbols',
+              explanation: 'Each row, column, and 3x3 box must contain unique Greek letters used in mathematics.'
+            }
+          ]
+        }
       }
     }
-  },
-  mathematics: {
-    name: 'Mathematics',
-    icon: Calculator,
-    gradient: ['#3B82F6', '#2563EB'],
-    modules: {
-      algebra: {
-        name: 'Algebra',
-        icon: TrendingUp,
-        gradient: ['#8B5CF6', '#A855F7'],
-        questions: [
-          {
-            word: 'VARIABLE',
-            hint: 'A symbol that represents a quantity in a mathematical expression',
-            definition: 'A symbol for a number we don\'t know yet',
-            difficulty: 'easy'
-          },
-          {
-            word: 'EQUATION',
-            hint: 'A mathematical statement that two expressions are equal',
-            definition: 'A statement that the values of two mathematical expressions are equal',
-            difficulty: 'easy'
-          },
-          {
-            word: 'POLYNOMIAL',
-            hint: 'An expression consisting of variables and coefficients',
-            definition: 'An expression of more than two algebraic terms',
-            difficulty: 'medium'
-          },
-          {
-            word: 'FUNCTION',
-            hint: 'A relation between a set of inputs and a set of permissible outputs',
-            definition: 'A relation that uniquely associates members of one set with members of another set',
-            difficulty: 'medium'
-          },
-          {
-            word: 'QUADRATIC',
-            hint: 'A polynomial equation of the second degree',
-            definition: 'An equation of the form ax² + bx + c = 0',
-            difficulty: 'medium'
-          },
-          {
-            word: 'FACTOR',
-            hint: 'A number or algebraic expression that divides another number or expression',
-            definition: 'A number or algebraic expression that divides another number or expression evenly',
-            difficulty: 'easy'
-          },
-          {
-            word: 'COEFFICIENT',
-            hint: 'A numerical or constant factor in an algebraic term',
-            definition: 'A multiplicative factor in some term of a polynomial',
-            difficulty: 'medium'
-          },
-          {
-            word: 'EXPONENT',
-            hint: 'A number that indicates how many times a base number is multiplied by itself',
-            definition: 'A quantity representing the power to which a given number or expression is to be raised',
-            difficulty: 'easy'
-          },
-          {
-            word: 'INEQUALITY',
-            hint: 'A relation that holds between two values when they are different',
-            definition: 'A statement that one quantity is greater than or less than another',
-            difficulty: 'hard'
-          },
-          {
-            word: 'MATRIX',
-            hint: 'A rectangular array of numbers arranged in rows and columns',
-            definition: 'A rectangular array of quantities or expressions in rows and columns',
-            difficulty: 'hard'
-          }
-        ]
-      }
-    }
-  }
+  };
+  
+  return puzzles;
 };
 
+const SUDOKU_SUBJECTS = generateSudokuPuzzle();
+
 const QUESTION_OPTIONS = [
-  { value: 2, label: '2 Questions', duration: '~2 min', difficulty: 'Quick' },
-  { value: 5, label: '5 Questions', duration: '~5 min', difficulty: 'Standard' },
-  { value: 10, label: '10 Questions', duration: '~10 min', difficulty: 'Complete' }
+  { value: 2, label: '2 Puzzles', duration: '~2 min', difficulty: 'Quick' },
+  { value: 5, label: '5 Puzzles', duration: '~5 min', difficulty: 'Standard' },
+  { value: 10, label: '10 Puzzles', duration: '~10 min', difficulty: 'Complete' }
 ];
 
 type GamePhase = 'subject-selection' | 'module-selection' | 'question-selection' | 'playing' | 'results';
 type GameStatus = 'playing' | 'won' | 'lost';
 
-export default function GameScreen() {
+export default function SudokuGameScreen() {
   const router = useRouter();
   const { type, subject } = useLocalSearchParams<{
     type: string;
@@ -191,37 +194,35 @@ export default function GameScreen() {
   const [selectedModule, setSelectedModule] = useState<string>(() => {
     if (subject === 'chemistry') {
       return 'atoms'; // Default to atoms module for chemistry
+    } else if (subject === 'mathematics') {
+      return 'algebra'; // Default to algebra module for mathematics
     }
     return '';
   });
-  const [selectedQuestionCount, setSelectedQuestionCount] = useState<number>(5);
-  const [gameQuestions, setGameQuestions] = useState<any[]>([]);
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState<number>(2);
+  const [gameGrids, setGameGrids] = useState<any[]>([]);
 
   // Game state
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
-  const [wrongGuesses, setWrongGuesses] = useState(0);
+  const [currentGridIndex, setCurrentGridIndex] = useState(0);
+  const [userGrid, setUserGrid] = useState<string[][]>([]);
+  const [initialGrid, setInitialGrid] = useState<string[][]>([]);
+  const [solutionGrid, setSolutionGrid] = useState<string[][]>([]);
+  const [selectedCell, setSelectedCell] = useState<{row: number, col: number} | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [showHint, setShowHint] = useState(false);
   const [score, setScore] = useState(0);
-  const [questionsCompleted, setQuestionsCompleted] = useState(0);
-  const [questionsAnswered, setQuestionsAnswered] = useState<any[]>([]);
+  const [gridsCompleted, setGridsCompleted] = useState(0);
+  const [gridsAnswered, setGridsAnswered] = useState<any[]>([]);
   const [shakeAnimation] = useState(new Animated.Value(0));
   const [celebrationAnimation] = useState(new Animated.Value(0));
 
-  const MAX_WRONG_GUESSES = 6;
-  const currentQuestion = gameQuestions[currentQuestionIndex];
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const currentGrid = gameGrids[currentGridIndex];
 
-  // Check if word is complete
-  const isWordComplete = currentQuestion?.word.split('').every((letter: string) => guessedLetters.includes(letter));
-
-  // Reset game for new question
+  // Reset game for new grid
   const resetGame = () => {
-    setGuessedLetters([]);
-    setWrongGuesses(0);
     setGameStatus('playing');
     setShowHint(false);
+    setSelectedCell(null);
   };
 
   // Handle subject selection
@@ -247,17 +248,25 @@ export default function GameScreen() {
   // Handle question count selection and start game
   const startGame = (questionCount: number) => {
     setSelectedQuestionCount(questionCount);
-    const subjectData = GAME_SUBJECTS[selectedSubject as keyof typeof GAME_SUBJECTS];
+    const subjectData = SUDOKU_SUBJECTS[selectedSubject as keyof typeof SUDOKU_SUBJECTS];
     if (subjectData && selectedModule) {
       // Fix TypeScript error by properly typing the modules access
       const modules = subjectData.modules as Record<string, any>;
       const moduleData = modules[selectedModule];
-      if (moduleData && moduleData.questions) {
-        // Shuffle and select questions
-        const shuffled = [...moduleData.questions].sort(() => Math.random() - 0.5);
-        const selectedQuestions = shuffled.slice(0, questionCount);
-        setGameQuestions(selectedQuestions);
+      if (moduleData && moduleData.grids) {
+        // Shuffle and select grids
+        const shuffled = [...moduleData.grids].sort(() => Math.random() - 0.5);
+        const selectedGrids = shuffled.slice(0, questionCount);
+        setGameGrids(selectedGrids);
         setGamePhase('playing');
+        
+        // Initialize the first grid
+        if (selectedGrids.length > 0) {
+          const firstGrid = selectedGrids[0];
+          setInitialGrid(firstGrid.initialGrid);
+          setSolutionGrid(firstGrid.solutionGrid);
+          setUserGrid(JSON.parse(JSON.stringify(firstGrid.initialGrid))); // Deep copy
+        }
         resetGame();
       }
     }
@@ -268,64 +277,92 @@ export default function GameScreen() {
     setGamePhase('subject-selection');
     setSelectedSubject('');
     setSelectedModule('');
-    setSelectedQuestionCount(5);
-    setGameQuestions([]);
-    setCurrentQuestionIndex(0);
+    setSelectedQuestionCount(2);
+    setGameGrids([]);
+    setCurrentGridIndex(0);
+    setUserGrid([]);
+    setInitialGrid([]);
+    setSolutionGrid([]);
     setScore(0);
-    setQuestionsCompleted(0);
-    setQuestionsAnswered([]);
+    setGridsCompleted(0);
+    setGridsAnswered([]);
     resetGame();
   };
 
-  // Handle letter guess
-  const guessLetter = (letter: string) => {
-    if (guessedLetters.includes(letter) || gameStatus !== 'playing' || !currentQuestion) return;
+  // Handle cell selection
+  const handleCellPress = (row: number, col: number) => {
+    if (initialGrid[row][col] !== '') return; // Can't edit pre-filled cells
+    setSelectedCell({row, col});
+  };
 
-    const newGuessedLetters = [...guessedLetters, letter];
-    setGuessedLetters(newGuessedLetters);
+  // Handle symbol selection
+  const handleSymbolSelect = (symbol: string) => {
+    if (!selectedCell || gameStatus !== 'playing') return;
+    
+    const {row, col} = selectedCell;
+    const newUserGrid = [...userGrid];
+    newUserGrid[row] = [...newUserGrid[row]];
+    newUserGrid[row][col] = symbol;
+    setUserGrid(newUserGrid);
+  };
 
-    if (!currentQuestion.word.includes(letter)) {
-      const newWrongGuesses = wrongGuesses + 1;
-      setWrongGuesses(newWrongGuesses);
-      
-      // Trigger shake animation
+  // Check if the grid is complete and correct
+  const checkSolution = () => {
+    if (!userGrid.length || !solutionGrid.length) return false;
+    
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        if (userGrid[i][j] !== solutionGrid[i][j]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  // Submit the current grid
+  const submitGrid = () => {
+    if (gameStatus !== 'playing') return;
+    
+    const isCorrect = checkSolution();
+    
+    if (isCorrect) {
+      setGameStatus('won');
+      const gridScore = Math.max(100 - (showHint ? 20 : 0), 10);
+      setScore(prev => prev + gridScore);
+      setGridsCompleted(prev => prev + 1);
+    } else {
+      setGameStatus('lost');
+      // Trigger shake animation for incorrect answer
       Animated.sequence([
         Animated.timing(shakeAnimation, { toValue: 10, duration: 100, useNativeDriver: true }),
         Animated.timing(shakeAnimation, { toValue: -10, duration: 100, useNativeDriver: true }),
         Animated.timing(shakeAnimation, { toValue: 10, duration: 100, useNativeDriver: true }),
         Animated.timing(shakeAnimation, { toValue: 0, duration: 100, useNativeDriver: true }),
       ]).start();
-
-      if (newWrongGuesses >= MAX_WRONG_GUESSES) {
-        setGameStatus('lost');
-      }
     }
   };
 
-  // Check for win condition
-  useEffect(() => {
-    if (isWordComplete && gameStatus === 'playing') {
-      setGameStatus('won');
-      const questionScore = Math.max(100 - (wrongGuesses * 10) - (showHint ? 20 : 0), 10);
-      setScore(prev => prev + questionScore);
-      setQuestionsCompleted(prev => prev + 1);
-    }
-  }, [guessedLetters, gameStatus]);
-
-  // Next question
-  const nextQuestion = () => {
-    // Save current question result
-    const questionResult = {
-      question: currentQuestion,
+  // Next grid
+  const nextGrid = () => {
+    // Save current grid result
+    const gridResult = {
+      grid: currentGrid,
       status: gameStatus,
-      wrongGuesses,
       usedHint: showHint,
-      score: gameStatus === 'won' ? Math.max(100 - (wrongGuesses * 10) - (showHint ? 20 : 0), 10) : 0
+      score: gameStatus === 'won' ? Math.max(100 - (showHint ? 20 : 0), 10) : 0
     };
-    setQuestionsAnswered(prev => [...prev, questionResult]);
+    setGridsAnswered(prev => [...prev, gridResult]);
 
-    if (currentQuestionIndex < gameQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+    if (currentGridIndex < gameGrids.length - 1) {
+      setCurrentGridIndex(prev => prev + 1);
+      
+      // Initialize the next grid
+      const nextGridData = gameGrids[currentGridIndex + 1];
+      setInitialGrid(nextGridData.initialGrid);
+      setSolutionGrid(nextGridData.solutionGrid);
+      setUserGrid(JSON.parse(JSON.stringify(nextGridData.initialGrid))); // Deep copy
+      
       resetGame();
     } else {
       // Game completed - show results
@@ -354,21 +391,21 @@ export default function GameScreen() {
         <View style={styles.selectionContent}>
           <View style={styles.selectionHeader}>
             <LinearGradient
-              colors={['#8B5CF6', '#A855F7']}
+              colors={['#3B82F6', '#2563EB']}
               style={styles.selectionIcon}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Type size={32} color="white" strokeWidth={2.5} />
+              <Grid3X3 size={32} color="white" strokeWidth={2.5} />
             </LinearGradient>
-            <Text style={[styles.selectionTitle, { color: theme.text }]}>Hangman Game</Text>
+            <Text style={[styles.selectionTitle, { color: theme.text }]}>Sudoku Game</Text>
             <Text style={[styles.selectionSubtitle, { color: theme.textSecondary }]}>
               Choose a subject to start learning
             </Text>
           </View>
 
           <View style={styles.optionsGrid}>
-            {Object.entries(GAME_SUBJECTS).map(([key, subject]) => {
+            {Object.entries(SUDOKU_SUBJECTS).map(([key, subject]) => {
               const IconComponent = subject.icon;
               return (
                 <TouchableOpacity
@@ -399,7 +436,7 @@ export default function GameScreen() {
 
   // Module Selection Screen
   const renderModuleSelection = () => {
-    const subjectData = GAME_SUBJECTS[selectedSubject as keyof typeof GAME_SUBJECTS];
+    const subjectData = SUDOKU_SUBJECTS[selectedSubject as keyof typeof SUDOKU_SUBJECTS];
     if (!subjectData) return null;
 
     return (
@@ -452,7 +489,7 @@ export default function GameScreen() {
                   </LinearGradient>
                   <Text style={[styles.cardTitle, { color: theme.text }]}>{module.name}</Text>
                   <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
-                    {module.questions.length} questions available
+                    {module.grids.length} puzzles available
                   </Text>
                 </TouchableOpacity>
               );
@@ -465,7 +502,7 @@ export default function GameScreen() {
 
   // Question Count Selection Screen
   const renderQuestionSelection = () => {
-    const subjectData = GAME_SUBJECTS[selectedSubject as keyof typeof GAME_SUBJECTS];
+    const subjectData = SUDOKU_SUBJECTS[selectedSubject as keyof typeof SUDOKU_SUBJECTS];
     // Fix TypeScript error by properly typing the modules access
     const modules = subjectData?.modules as Record<string, any>;
     const moduleData = modules?.[selectedModule];
@@ -477,7 +514,7 @@ export default function GameScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => setGamePhase('module-selection')}>
             <ArrowLeft size={24} color={theme.text} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.text }]}>Choose Questions</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Choose Puzzles</Text>
         </View>
 
         <View style={styles.selectionContent}>
@@ -492,7 +529,7 @@ export default function GameScreen() {
             </LinearGradient>
             <Text style={[styles.selectionTitle, { color: theme.text }]}>{moduleData.name}</Text>
             <Text style={[styles.selectionSubtitle, { color: theme.textSecondary }]}>
-              How many questions would you like to answer?
+              How many puzzles would you like to solve?
             </Text>
           </View>
 
@@ -523,81 +560,88 @@ export default function GameScreen() {
     );
   };
 
-  // Enhanced Hangman Display
-  const renderHangman = () => {
-    const hangmanStages = ['⚫', '│', '╱', '╲', '╱', '╲'];
+  // Sudoku Grid Display
+  const renderSudokuGrid = () => {
+    if (!userGrid.length || !initialGrid.length) return null;
     
     return (
-      <View style={styles.hangmanContainer}>
-        <LinearGradient
-          colors={['#EF4444', '#DC2626']}
-          style={styles.hangmanHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <AlertCircle size={20} color="white" strokeWidth={2.5} />
-          <Text style={styles.hangmanTitle}>Hangman Progress</Text>
-        </LinearGradient>
-        
-        <View style={[styles.hangmanFigure, { borderColor: theme.border }]}>
-          <View style={styles.hangmanPole}>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>┌─────┐</Text>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>│     │</Text>
-            <View style={styles.hangmanBody}>
-              {hangmanStages.slice(0, wrongGuesses).map((part, index) => (
-                <Text key={index} style={[styles.hangmanPart, { color: '#EF4444' }]}>
-                  {part}
-                </Text>
-              ))}
+      <Animated.View style={[styles.gridContainer, { transform: [{ translateX: shakeAnimation }] }]}>
+        <Text style={[styles.gridTitle, { color: theme.text }]}>Sudoku Puzzle:</Text>
+        <View style={[styles.sudokuGrid, { backgroundColor: theme.surface }]}>
+          {userGrid.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.gridRow}>
+              {row.map((cell, colIndex) => {
+                const isInitial = initialGrid[rowIndex][colIndex] !== '';
+                const isSelected = selectedCell?.row === rowIndex && selectedCell?.col === colIndex;
+                const isDuplicate = false; // Simplified for now
+                
+                return (
+                  <TouchableOpacity
+                    key={`${rowIndex}-${colIndex}`}
+                    style={[
+                      styles.gridCell,
+                      { 
+                        backgroundColor: isInitial ? theme.background : theme.surface,
+                        borderColor: isSelected ? theme.primary : isDuplicate ? '#EF4444' : theme.border
+                      },
+                      rowIndex % 3 === 0 && { borderTopWidth: 2 },
+                      colIndex % 3 === 0 && { borderLeftWidth: 2 },
+                      rowIndex === 8 && { borderBottomWidth: 2 },
+                      colIndex === 8 && { borderRightWidth: 2 }
+                    ]}
+                    onPress={() => handleCellPress(rowIndex, colIndex)}
+                  >
+                    <Text style={[
+                      styles.cellText,
+                      { 
+                        color: isInitial ? theme.text : theme.textSecondary,
+                        fontWeight: isInitial ? '700' : '500'
+                      }
+                    ]}>
+                      {cell}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>│</Text>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>└─────</Text>
-          </View>
+          ))}
         </View>
         
-        <View style={[styles.progressContainer, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.wrongGuessesText, { color: theme.textSecondary }]}>
-            Wrong attempts: {wrongGuesses}/{MAX_WRONG_GUESSES}
-          </Text>
-          <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-            <View
-              style={[
-                styles.progressFill,
-                { 
-                  width: `${(wrongGuesses / MAX_WRONG_GUESSES) * 100}%`, 
-                  backgroundColor: wrongGuesses > 3 ? '#EF4444' : '#F59E0B' 
-                }
-              ]}
-            />
-          </View>
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: theme.primary }]}
+          onPress={submitGrid}
+        >
+          <Text style={styles.submitButtonText}>Check Solution</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  // Symbol Selection Panel
+  const renderSymbolPanel = () => {
+    if (!currentGrid || !selectedCell) return null;
+    
+    return (
+      <View style={[styles.symbolPanel, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.symbolPanelTitle, { color: theme.text }]}>Select a Symbol:</Text>
+        <View style={styles.symbolGrid}>
+          {currentGrid.symbols.slice(0, 24).map((symbol, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.symbolButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+              onPress={() => handleSymbolSelect(symbol)}
+            >
+              <Text style={[styles.symbolText, { color: theme.text }]}>{symbol}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     );
   };
 
-  // Word Display
-  const renderWord = () => {
-    if (!currentQuestion) return null;
-    
-    return (
-      <Animated.View style={[styles.wordContainer, { transform: [{ translateX: shakeAnimation }] }]}>
-        <Text style={[styles.wordTitle, { color: theme.text }]}>Guess the Word:</Text>
-        <View style={styles.wordDisplay}>
-          {currentQuestion.word.split('').map((letter: string, index: number) => (
-            <View key={index} style={[styles.letterBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Text style={[styles.letter, { color: theme.text }]}>
-                {guessedLetters.includes(letter) ? letter : '_'}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </Animated.View>
-    );
-  };
-
   // Hint Section
   const renderHintSection = () => {
-    if (!currentQuestion) return null;
+    if (!currentGrid) return null;
     
     return (
       <View style={[styles.hintContainer, { backgroundColor: theme.surface }]}>
@@ -613,7 +657,7 @@ export default function GameScreen() {
         {showHint && (
           <View style={[styles.hintCard, { backgroundColor: theme.background }]}>
             <Text style={[styles.hintText, { color: theme.textSecondary }]}>
-              💡 {currentQuestion.hint}
+              💡 {currentGrid.hint}
             </Text>
           </View>
         )}
@@ -621,50 +665,9 @@ export default function GameScreen() {
     );
   };
 
-  // Alphabet Keyboard
-  const renderKeyboard = () => {
-    if (!currentQuestion) return null;
-    
-    return (
-      <View style={styles.keyboardContainer}>
-        <Text style={[styles.keyboardTitle, { color: theme.text }]}>Select a Letter:</Text>
-        <View style={styles.keyboard}>
-          {alphabet.map((letter) => {
-            const isGuessed = guessedLetters.includes(letter);
-            const isCorrect = isGuessed && currentQuestion.word.includes(letter);
-            const isWrong = isGuessed && !currentQuestion.word.includes(letter);
-            
-            return (
-              <TouchableOpacity
-                key={letter}
-                style={[
-                  styles.keyButton,
-                  { backgroundColor: theme.surface, borderColor: theme.border },
-                  isCorrect && { backgroundColor: '#10B981', borderColor: '#10B981' },
-                  isWrong && { backgroundColor: '#EF4444', borderColor: '#EF4444' },
-                  isGuessed && { opacity: 0.6 }
-                ]}
-                onPress={() => guessLetter(letter)}
-                disabled={isGuessed || gameStatus !== 'playing'}
-              >
-                <Text style={[
-                  styles.keyText,
-                  { color: theme.text },
-                  (isCorrect || isWrong) && { color: 'white' }
-                ]}>
-                  {letter}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-    );
-  };
-
-  // Game Result for Individual Questions
-  const renderGameResult = () => {
-    if (gameStatus === 'playing' || !currentQuestion) return null;
+  // Grid Result for Individual Grids
+  const renderGridResult = () => {
+    if (gameStatus === 'playing' || !currentGrid) return null;
 
     const isWon = gameStatus === 'won';
     return (
@@ -683,26 +686,22 @@ export default function GameScreen() {
         </LinearGradient>
         
         <Text style={[styles.resultTitle, { color: theme.text }]}>
-          {isWon ? 'Correct! 🎉' : 'Game Over 😞'}
+          {isWon ? 'Correct! 🎉' : 'Incorrect 😞'}
         </Text>
         
-        <Text style={[styles.resultWord, { color: theme.text }]}>
-          The word was: <Text style={{ fontWeight: '700' }}>{currentQuestion.word}</Text>
-        </Text>
-        
-        <View style={[styles.definitionCard, { backgroundColor: theme.background }]}>
-          <Text style={[styles.definitionTitle, { color: theme.primary }]}>Definition:</Text>
-          <Text style={[styles.definitionText, { color: theme.textSecondary }]}>
-            {currentQuestion.definition}
+        <View style={[styles.explanationCard, { backgroundColor: theme.background }]}>
+          <Text style={[styles.explanationTitle, { color: theme.primary }]}>Explanation:</Text>
+          <Text style={[styles.explanationText, { color: theme.textSecondary }]}>
+            {currentGrid.explanation}
           </Text>
         </View>
 
         <TouchableOpacity
           style={[styles.nextButton, { backgroundColor: theme.primary }]}
-          onPress={nextQuestion}
+          onPress={nextGrid}
         >
           <Text style={styles.nextButtonText}>
-            {currentQuestionIndex < gameQuestions.length - 1 ? 'Next Question' : 'Finish Game'}
+            {currentGridIndex < gameGrids.length - 1 ? 'Next Puzzle' : 'Finish Game'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -713,10 +712,10 @@ export default function GameScreen() {
   const renderGameResults = () => {
     if (gamePhase !== 'results') return null;
 
-    const totalQuestions = questionsAnswered.length;
-    const correctAnswers = questionsAnswered.filter(q => q.status === 'won').length;
-    const totalScore = questionsAnswered.reduce((sum, q) => sum + q.score, 0);
-    const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+    const totalPuzzles = gridsAnswered.length;
+    const correctAnswers = gridsAnswered.filter(q => q.status === 'won').length;
+    const totalScore = gridsAnswered.reduce((sum, q) => sum + q.score, 0);
+    const accuracy = totalPuzzles > 0 ? (correctAnswers / totalPuzzles) * 100 : 0;
 
     return (
       <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -751,7 +750,7 @@ export default function GameScreen() {
             </View>
             <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
               <XCircle size={24} color="#EF4444" strokeWidth={2.5} />
-              <Text style={[styles.statNumber, { color: theme.text }]}>{totalQuestions - correctAnswers}</Text>
+              <Text style={[styles.statNumber, { color: theme.text }]}>{totalPuzzles - correctAnswers}</Text>
               <Text style={[styles.statText, { color: theme.textSecondary }]}>Wrong</Text>
             </View>
             <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
@@ -782,12 +781,12 @@ export default function GameScreen() {
     );
   };
 
-  // Move this useEffect to the top level to fix hooks order error
+  // Move useEffect for updating profile stats to the top level to fix hooks order error
+  const hasUpdatedStats = React.useRef(false);
   useEffect(() => {
-    if (gamePhase === 'results') {
-      const totalQuestions = questionsAnswered.length;
-      const correctAnswers = questionsAnswered.filter(q => q.status === 'won').length;
-      const totalScore = questionsAnswered.reduce((sum, q) => sum + q.score, 0);
+    if (gamePhase === 'results' && gridsAnswered.length && !hasUpdatedStats.current) {
+      const totalScore = gridsAnswered.reduce((sum, q) => sum + q.score, 0);
+      const correctAnswers = gridsAnswered.filter(q => q.status === 'won').length;
       const updateStats = async () => {
         try {
           await updateProfileStats(totalScore, correctAnswers);
@@ -796,9 +795,13 @@ export default function GameScreen() {
         }
       };
       updateStats();
+      hasUpdatedStats.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gamePhase]);
+    if (gamePhase !== 'results') {
+      hasUpdatedStats.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamePhase, gridsAnswered]);
 
   // Show different phases
   if (gamePhase === 'subject-selection') return renderSubjectSelection();
@@ -806,31 +809,14 @@ export default function GameScreen() {
   if (gamePhase === 'question-selection') return renderQuestionSelection();
   if (gamePhase === 'results') return renderGameResults();
 
-  // If not hangman game, show placeholder
-  if (type !== 'hangman') {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.surface }]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.text }]}>Coming Soon</Text>
-        </View>
-        <View style={styles.content}>
-          <Text style={[styles.gameTitle, { color: theme.text }]}>This game will be implemented soon!</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // Main hangman game screen (playing phase)
+  // Main sudoku game screen (playing phase)
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Hangman Game</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Sudoku Game</Text>
         <TouchableOpacity 
           style={[styles.resetButtonStyle, { backgroundColor: theme.primary + '15' }]}
           onPress={restartGame}
@@ -848,23 +834,22 @@ export default function GameScreen() {
         <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
           <Zap size={16} color="#8B5CF6" />
           <Text style={[styles.statValue, { color: theme.text }]}>
-            {currentQuestionIndex + 1}/{gameQuestions.length}
+            {currentGridIndex + 1}/{gameGrids.length}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Question</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Puzzle</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
           <CheckCircle size={16} color="#10B981" />
-          <Text style={[styles.statValue, { color: theme.text }]}>{questionsCompleted}</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>{gridsCompleted}</Text>
           <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
         </View>
       </View>
 
       <View style={styles.gameContent}>
-        {renderHangman()}
-        {renderWord()}
+        {renderSudokuGrid()}
+        {renderSymbolPanel()}
         {renderHintSection()}
-        {renderKeyboard()}
-        {renderGameResult()}
+        {renderGridResult()}
       </View>
     </ScrollView>
   );
@@ -921,41 +906,61 @@ const styles = StyleSheet.create({
   // Game Styles
   gameContent: { flex: 1, paddingHorizontal: 20, paddingBottom: 20 },
   
-  // Hangman Display
-  hangmanContainer: { alignItems: 'center', marginBottom: 24 },
-  hangmanHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    marginBottom: 16, elevation: 4
+  // Sudoku Grid Display
+  gridContainer: { alignItems: 'center', marginBottom: 24 },
+  gridTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  sudokuGrid: {
+    borderWidth: 2,
+    borderRadius: 8,
+    marginBottom: 20,
+    elevation: 2,
+    padding: 4
   },
-  hangmanTitle: { color: 'white', fontSize: 16, fontWeight: '700' },
-  hangmanFigure: {
-    width: 140, height: 160, borderWidth: 2, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-    padding: 12, marginBottom: 12, backgroundColor: '#f8f9fa'
+  gridRow: { flexDirection: 'row' },
+  gridCell: {
+    width: 30,
+    height: 30,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  hangmanPole: { alignItems: 'center' },
-  poleText: { fontSize: 16, fontFamily: 'monospace', lineHeight: 18 },
-  hangmanBody: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  hangmanPart: { fontSize: 18, margin: 1, fontWeight: '700' },
-  progressContainer: {
-    padding: 12, borderRadius: 8, alignItems: 'center',
-    minWidth: 140, elevation: 2
-  },
-  wrongGuessesText: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  progressBar: { width: 100, height: 6, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
+  cellText: { fontSize: 14, fontWeight: '500' },
   
-  // Word Display
-  wordContainer: { alignItems: 'center', marginBottom: 24 },
-  wordTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  wordDisplay: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  letterBox: {
-    width: 36, height: 42, borderRadius: 8, borderWidth: 2,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4, elevation: 1
+  // Symbol Panel
+  symbolPanel: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    elevation: 2
   },
-  letter: { fontSize: 20, fontWeight: '700' },
+  symbolPanelTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  symbolGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6
+  },
+  symbolButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    elevation: 1
+  },
+  symbolText: { fontSize: 14, fontWeight: '600' },
+  
+  // Submit Button
+  submitButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+    width: '100%'
+  },
+  submitButtonText: { color: 'white', fontSize: 16, fontWeight: '700' },
   
   // Hint Section
   hintContainer: { padding: 16, borderRadius: 12, marginBottom: 24, elevation: 2 },
@@ -966,17 +971,6 @@ const styles = StyleSheet.create({
   hintButtonText: { fontSize: 14, fontWeight: '600' },
   hintCard: { padding: 12, borderRadius: 8, marginTop: 8 },
   hintText: { fontSize: 14, textAlign: 'center', lineHeight: 20, fontStyle: 'italic' },
-  
-  // Keyboard
-  keyboardContainer: { marginBottom: 24 },
-  keyboardTitle: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
-  keyboard: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
-  keyButton: {
-    width: 36, height: 36, borderRadius: 8, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 6, elevation: 1
-  },
-  keyText: { fontSize: 14, fontWeight: '600' },
   
   // Question Selection
   questionOptions: { gap: 16 },
@@ -1004,7 +998,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 16, fontWeight: '700' },
   statLabel: { fontSize: 10, fontWeight: '500' },
   
-  // Game Results
+  // Grid Results
   resultContainer: {
     padding: 20, borderRadius: 16, alignItems: 'center',
     marginBottom: 20, elevation: 4
@@ -1018,19 +1012,15 @@ const styles = StyleSheet.create({
     fontSize: 20, fontWeight: '700', marginBottom: 8,
     textAlign: 'center'
   },
-  resultWord: {
-    fontSize: 16, marginBottom: 16,
-    textAlign: 'center'
-  },
-  definitionCard: {
+  explanationCard: {
     padding: 16, borderRadius: 12,
     marginBottom: 20, width: '100%'
   },
-  definitionTitle: {
+  explanationTitle: {
     fontSize: 14, fontWeight: '700',
     marginBottom: 8
   },
-  definitionText: {
+  explanationText: {
     fontSize: 14, lineHeight: 20
   },
   nextButton: {
@@ -1059,18 +1049,6 @@ const styles = StyleSheet.create({
   },
   statNumber: { fontSize: 20, fontWeight: '700', marginVertical: 4 },
   statText: { fontSize: 12, fontWeight: '500' },
-  
-  performanceCard: {
-    padding: 20, borderRadius: 16, alignItems: 'center',
-    marginBottom: 24, elevation: 4
-  },
-  performanceIcon: {
-    width: 56, height: 56, borderRadius: 28,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 12, elevation: 4
-  },
-  performanceTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  performanceText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
   
   actionButtons: { flexDirection: 'row', gap: 12 },
   actionButton: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center', elevation: 2 },

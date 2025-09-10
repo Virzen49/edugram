@@ -6,7 +6,7 @@ export async function getCategory(grade: string): ApiResult {
   const payload = { grade };
 
   try {
-    const response = await fetch(`${BASE_URL}/getcategory`, {
+    const response = await fetch(`${BASE_URL}/getCategorys`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

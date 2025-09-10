@@ -220,8 +220,19 @@ export default function LectureScreen() {
 
         {activeTab === 'Notes' && notesUpload && (
           <View>
-            <WebView source={{ uri: notesUpload.fileUrl }} style={{ flex: 1, height: 400 }} />
-            
+            {/* Try to display PDF/Doc in WebView, fallback to download link if not supported */}
+            {notesUpload.fileUrl.endsWith('.pdf') || notesUpload.fileUrl.endsWith('.docx') || notesUpload.fileUrl.endsWith('.pptx') ? (
+              <WebView
+                source={{ uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(notesUpload.fileUrl)}` }}
+                style={{ flex: 1, height: 400 }}
+                startInLoadingState
+                javaScriptEnabled
+                domStorageEnabled
+                allowFileAccess
+              />
+            ) : (
+              <WebView source={{ uri: notesUpload.fileUrl }} style={{ flex: 1, height: 400 }} startInLoadingState />
+            )}
             {/* Mark as Complete Button for Notes */}
             <TouchableOpacity
               style={[

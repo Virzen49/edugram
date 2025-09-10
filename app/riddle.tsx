@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Animated, Dimensions, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Type, Grid3X3, RefreshCw, Award, Zap, AlertCircle, CheckCircle, XCircle, Beaker, Calculator, FileText, Target, Atom, Star, TrendingUp, Clock } from 'lucide-react-native';
+import { ArrowLeft, FileText, RefreshCw, Award, Zap, AlertCircle, CheckCircle, XCircle, Beaker, Calculator, Target, Atom, TrendingUp } from 'lucide-react-native';
 import { updateProfileStats } from './api/auth';
 
 const { width, height } = Dimensions.get('window');
 
-// Game Data Structure
-const GAME_SUBJECTS = {
+// Riddle Game Data Structure
+const RIDDLE_SUBJECTS = {
   chemistry: {
     name: 'Chemistry',
     icon: Beaker,
@@ -19,66 +19,86 @@ const GAME_SUBJECTS = {
         name: 'Atoms',
         icon: Atom,
         gradient: ['#8B5CF6', '#A855F7'],
-        questions: [
+        riddles: [
           {
-            word: 'ELECTRON',
-            hint: 'Negatively charged subatomic particle that orbits the nucleus',
-            definition: 'A stable subatomic particle with negative electric charge',
-            difficulty: 'medium'
+            id: 1,
+            difficulty: 'easy',
+            question: 'I am the smallest unit of matter, with a nucleus and electrons that orbit. What am I?',
+            answer: 'ATOM',
+            hint: 'I am the basic building block of all elements',
+            explanation: 'An atom is the smallest unit of ordinary matter that forms a chemical element, consisting of a nucleus and electrons.'
           },
           {
-            word: 'PROTON',
-            hint: 'Positively charged particle found in the nucleus of an atom',
-            definition: 'A stable subatomic particle with positive electric charge',
-            difficulty: 'easy'
+            id: 2,
+            difficulty: 'easy',
+            question: 'I am negatively charged and orbit the nucleus. I am lighter than protons and neutrons. What am I?',
+            answer: 'ELECTRON',
+            hint: 'I am responsible for chemical bonding',
+            explanation: 'Electrons are subatomic particles with a negative electric charge that orbit the nucleus of an atom.'
           },
           {
-            word: 'NEUTRON',
-            hint: 'Neutral subatomic particle with no electric charge',
-            definition: 'A subatomic particle with no net electric charge',
-            difficulty: 'easy'
+            id: 3,
+            difficulty: 'easy',
+            question: 'I am found in the nucleus and have a positive charge. I balance the negative electrons. What am I?',
+            answer: 'PROTON',
+            hint: 'My number determines what element I am',
+            explanation: 'Protons are subatomic particles with a positive electric charge found in the nucleus of an atom.'
           },
           {
-            word: 'NUCLEUS',
-            hint: 'The dense central core of an atom containing protons and neutrons',
-            definition: 'The positively charged central core of an atom',
-            difficulty: 'medium'
+            id: 4,
+            difficulty: 'medium',
+            question: 'I live in the nucleus with no charge at all. I help determine the isotope. What am I?',
+            answer: 'NEUTRON',
+            hint: 'I have almost the same mass as a proton',
+            explanation: 'Neutrons are subatomic particles with no net electric charge, found in the nucleus of an atom.'
           },
           {
-            word: 'ATOM',
-            hint: 'The smallest unit of ordinary matter that forms a chemical element',
-            definition: 'The basic unit of a chemical element',
-            difficulty: 'easy'
+            id: 5,
+            difficulty: 'medium',
+            question: 'I am the dense center of an atom, containing protons and neutrons. What am I?',
+            answer: 'NUCLEUS',
+            hint: 'I contain most of the atom\'s mass',
+            explanation: 'The nucleus is the positively charged central core of an atom, containing protons and neutrons.'
           },
           {
-            word: 'ELEMENT',
-            hint: 'A pure substance consisting of only one type of atom',
-            definition: 'A substance that cannot be broken down into simpler substances',
-            difficulty: 'medium'
+            id: 6,
+            difficulty: 'medium',
+            question: 'I am a pure substance made of only one type of atom. Oxygen and gold are examples of me. What am I?',
+            answer: 'ELEMENT',
+            hint: 'I cannot be broken down into simpler substances',
+            explanation: 'An element is a pure substance consisting of only one type of atom.'
           },
           {
-            word: 'ISOTOPE',
-            hint: 'Atoms of the same element with different numbers of neutrons',
-            definition: 'Variants of an element with the same number of protons but different neutrons',
-            difficulty: 'hard'
+            id: 7,
+            difficulty: 'hard',
+            question: 'I am an atom of the same element but with a different number of neutrons. Carbon-12 and Carbon-14 are examples. What am I?',
+            answer: 'ISOTOPE',
+            hint: 'I have the same number of protons but different atomic masses',
+            explanation: 'Isotopes are variants of an element with the same number of protons but different numbers of neutrons.'
           },
           {
-            word: 'ORBITAL',
-            hint: 'The region around the nucleus where electrons are likely to be found',
-            definition: 'A mathematical function describing the wave-like behavior of electrons',
-            difficulty: 'hard'
+            id: 8,
+            difficulty: 'hard',
+            question: 'I am the region around the nucleus where electrons are likely to be found. I am described mathematically. What am I?',
+            answer: 'ORBITAL',
+            hint: 'I am not a fixed path but a probability region',
+            explanation: 'An orbital is a mathematical function describing the wave-like behavior of electrons in an atom.'
           },
           {
-            word: 'VALENCE',
-            hint: 'The outermost electron shell of an atom',
-            definition: 'The combining capacity of an element',
-            difficulty: 'hard'
+            id: 9,
+            difficulty: 'hard',
+            question: 'I am the outermost electron shell of an atom. I determine chemical properties. What am I?',
+            answer: 'VALENCE',
+            hint: 'I determine how an atom bonds with others',
+            explanation: 'The valence shell is the outermost electron shell of an atom, determining its chemical properties.'
           },
           {
-            word: 'MOLECULE',
-            hint: 'Two or more atoms bonded together',
-            definition: 'A group of atoms bonded together representing the smallest unit of a compound',
-            difficulty: 'medium'
+            id: 10,
+            difficulty: 'medium',
+            question: 'I am formed when two or more atoms bond together. Water is an example of me. What am I?',
+            answer: 'MOLECULE',
+            hint: 'I am the smallest unit of a compound',
+            explanation: 'A molecule is a group of atoms bonded together, representing the smallest unit of a compound.'
           }
         ]
       }
@@ -93,66 +113,86 @@ const GAME_SUBJECTS = {
         name: 'Algebra',
         icon: TrendingUp,
         gradient: ['#8B5CF6', '#A855F7'],
-        questions: [
+        riddles: [
           {
-            word: 'VARIABLE',
-            hint: 'A symbol that represents a quantity in a mathematical expression',
-            definition: 'A symbol for a number we don\'t know yet',
-            difficulty: 'easy'
+            id: 1,
+            difficulty: 'easy',
+            question: 'I am a symbol that represents an unknown quantity. I am often x or y. What am I?',
+            answer: 'VARIABLE',
+            hint: 'I can take on different values',
+            explanation: 'A variable is a symbol that represents a quantity in a mathematical expression.'
           },
           {
-            word: 'EQUATION',
-            hint: 'A mathematical statement that two expressions are equal',
-            definition: 'A statement that the values of two mathematical expressions are equal',
-            difficulty: 'easy'
+            id: 2,
+            difficulty: 'easy',
+            question: 'I show that two expressions are equal with an = sign. What am I?',
+            answer: 'EQUATION',
+            hint: 'I have two sides that are balanced',
+            explanation: 'An equation is a mathematical statement that two expressions are equal.'
           },
           {
-            word: 'POLYNOMIAL',
-            hint: 'An expression consisting of variables and coefficients',
-            definition: 'An expression of more than two algebraic terms',
-            difficulty: 'medium'
+            id: 3,
+            difficulty: 'medium',
+            question: 'I am an expression with variables and coefficients. x² + 2x + 1 is an example. What am I?',
+            answer: 'POLYNOMIAL',
+            hint: 'I can have one or more terms',
+            explanation: 'A polynomial is an expression consisting of variables and coefficients.'
           },
           {
-            word: 'FUNCTION',
-            hint: 'A relation between a set of inputs and a set of permissible outputs',
-            definition: 'A relation that uniquely associates members of one set with members of another set',
-            difficulty: 'medium'
+            id: 4,
+            difficulty: 'medium',
+            question: 'I relate inputs to outputs. For each input, there is exactly one output. What am I?',
+            answer: 'FUNCTION',
+            hint: 'I am often written as f(x)',
+            explanation: 'A function is a relation between a set of inputs and a set of permissible outputs.'
           },
           {
-            word: 'QUADRATIC',
-            hint: 'A polynomial equation of the second degree',
-            definition: 'An equation of the form ax² + bx + c = 0',
-            difficulty: 'medium'
+            id: 5,
+            difficulty: 'medium',
+            question: 'I am a polynomial equation of the second degree. My general form is ax² + bx + c = 0. What am I?',
+            answer: 'QUADRATIC',
+            hint: 'I can have at most two real solutions',
+            explanation: 'A quadratic equation is a polynomial equation of the second degree.'
           },
           {
-            word: 'FACTOR',
-            hint: 'A number or algebraic expression that divides another number or expression',
-            definition: 'A number or algebraic expression that divides another number or expression evenly',
-            difficulty: 'easy'
+            id: 6,
+            difficulty: 'easy',
+            question: 'I divide another number evenly with no remainder. 2 and 3 are factors of 6. What am I?',
+            answer: 'FACTOR',
+            hint: 'I am a divisor of another number',
+            explanation: 'A factor is a number that divides another number evenly.'
           },
           {
-            word: 'COEFFICIENT',
-            hint: 'A numerical or constant factor in an algebraic term',
-            definition: 'A multiplicative factor in some term of a polynomial',
-            difficulty: 'medium'
+            id: 7,
+            difficulty: 'medium',
+            question: 'I am a numerical factor in a term. In 3x, I am the number 3. What am I?',
+            answer: 'COEFFICIENT',
+            hint: 'I multiply the variable in a term',
+            explanation: 'A coefficient is a numerical or constant factor in an algebraic term.'
           },
           {
-            word: 'EXPONENT',
-            hint: 'A number that indicates how many times a base number is multiplied by itself',
-            definition: 'A quantity representing the power to which a given number or expression is to be raised',
-            difficulty: 'easy'
+            id: 8,
+            difficulty: 'easy',
+            question: 'I indicate how many times a base is multiplied by itself. In x³, I am the number 3. What am I?',
+            answer: 'EXPONENT',
+            hint: 'I show the power of a number',
+            explanation: 'An exponent indicates how many times a base number is multiplied by itself.'
           },
           {
-            word: 'INEQUALITY',
-            hint: 'A relation that holds between two values when they are different',
-            definition: 'A statement that one quantity is greater than or less than another',
-            difficulty: 'hard'
+            id: 9,
+            difficulty: 'hard',
+            question: 'I show that one quantity is greater than or less than another. I use symbols like < or >. What am I?',
+            answer: 'INEQUALITY',
+            hint: 'I compare quantities that are not equal',
+            explanation: 'An inequality is a relation that holds between two values when they are different.'
           },
           {
-            word: 'MATRIX',
-            hint: 'A rectangular array of numbers arranged in rows and columns',
-            definition: 'A rectangular array of quantities or expressions in rows and columns',
-            difficulty: 'hard'
+            id: 10,
+            difficulty: 'hard',
+            question: 'I am a rectangular array of numbers in rows and columns. I am used in linear algebra. What am I?',
+            answer: 'MATRIX',
+            hint: 'I can be used to solve systems of equations',
+            explanation: 'A matrix is a rectangular array of numbers arranged in rows and columns.'
           }
         ]
       }
@@ -161,15 +201,15 @@ const GAME_SUBJECTS = {
 };
 
 const QUESTION_OPTIONS = [
-  { value: 2, label: '2 Questions', duration: '~2 min', difficulty: 'Quick' },
-  { value: 5, label: '5 Questions', duration: '~5 min', difficulty: 'Standard' },
-  { value: 10, label: '10 Questions', duration: '~10 min', difficulty: 'Complete' }
+  { value: 2, label: '2 Riddles', duration: '~2 min', difficulty: 'Quick' },
+  { value: 5, label: '5 Riddles', duration: '~5 min', difficulty: 'Standard' },
+  { value: 10, label: '10 Riddles', duration: '~10 min', difficulty: 'Complete' }
 ];
 
 type GamePhase = 'subject-selection' | 'module-selection' | 'question-selection' | 'playing' | 'results';
 type GameStatus = 'playing' | 'won' | 'lost';
 
-export default function GameScreen() {
+export default function RiddleGameScreen() {
   const router = useRouter();
   const { type, subject } = useLocalSearchParams<{
     type: string;
@@ -191,35 +231,30 @@ export default function GameScreen() {
   const [selectedModule, setSelectedModule] = useState<string>(() => {
     if (subject === 'chemistry') {
       return 'atoms'; // Default to atoms module for chemistry
+    } else if (subject === 'mathematics') {
+      return 'algebra'; // Default to algebra module for mathematics
     }
     return '';
   });
   const [selectedQuestionCount, setSelectedQuestionCount] = useState<number>(5);
-  const [gameQuestions, setGameQuestions] = useState<any[]>([]);
+  const [gameRiddles, setGameRiddles] = useState<any[]>([]);
 
   // Game state
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
-  const [wrongGuesses, setWrongGuesses] = useState(0);
+  const [currentRiddleIndex, setCurrentRiddleIndex] = useState(0);
+  const [userAnswer, setUserAnswer] = useState('');
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [showHint, setShowHint] = useState(false);
   const [score, setScore] = useState(0);
-  const [questionsCompleted, setQuestionsCompleted] = useState(0);
-  const [questionsAnswered, setQuestionsAnswered] = useState<any[]>([]);
+  const [riddlesCompleted, setRiddlesCompleted] = useState(0);
+  const [riddlesAnswered, setRiddlesAnswered] = useState<any[]>([]);
   const [shakeAnimation] = useState(new Animated.Value(0));
   const [celebrationAnimation] = useState(new Animated.Value(0));
 
-  const MAX_WRONG_GUESSES = 6;
-  const currentQuestion = gameQuestions[currentQuestionIndex];
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const currentRiddle = gameRiddles[currentRiddleIndex];
 
-  // Check if word is complete
-  const isWordComplete = currentQuestion?.word.split('').every((letter: string) => guessedLetters.includes(letter));
-
-  // Reset game for new question
+  // Reset game for new riddle
   const resetGame = () => {
-    setGuessedLetters([]);
-    setWrongGuesses(0);
+    setUserAnswer('');
     setGameStatus('playing');
     setShowHint(false);
   };
@@ -247,16 +282,16 @@ export default function GameScreen() {
   // Handle question count selection and start game
   const startGame = (questionCount: number) => {
     setSelectedQuestionCount(questionCount);
-    const subjectData = GAME_SUBJECTS[selectedSubject as keyof typeof GAME_SUBJECTS];
+    const subjectData = RIDDLE_SUBJECTS[selectedSubject as keyof typeof RIDDLE_SUBJECTS];
     if (subjectData && selectedModule) {
       // Fix TypeScript error by properly typing the modules access
       const modules = subjectData.modules as Record<string, any>;
       const moduleData = modules[selectedModule];
-      if (moduleData && moduleData.questions) {
-        // Shuffle and select questions
-        const shuffled = [...moduleData.questions].sort(() => Math.random() - 0.5);
-        const selectedQuestions = shuffled.slice(0, questionCount);
-        setGameQuestions(selectedQuestions);
+      if (moduleData && moduleData.riddles) {
+        // Shuffle and select riddles
+        const shuffled = [...moduleData.riddles].sort(() => Math.random() - 0.5);
+        const selectedRiddles = shuffled.slice(0, questionCount);
+        setGameRiddles(selectedRiddles);
         setGamePhase('playing');
         resetGame();
       }
@@ -269,63 +304,50 @@ export default function GameScreen() {
     setSelectedSubject('');
     setSelectedModule('');
     setSelectedQuestionCount(5);
-    setGameQuestions([]);
-    setCurrentQuestionIndex(0);
+    setGameRiddles([]);
+    setCurrentRiddleIndex(0);
     setScore(0);
-    setQuestionsCompleted(0);
-    setQuestionsAnswered([]);
+    setRiddlesCompleted(0);
+    setRiddlesAnswered([]);
     resetGame();
   };
 
-  // Handle letter guess
-  const guessLetter = (letter: string) => {
-    if (guessedLetters.includes(letter) || gameStatus !== 'playing' || !currentQuestion) return;
+  // Handle answer submission
+  const submitAnswer = () => {
+    if (!userAnswer.trim() || gameStatus !== 'playing' || !currentRiddle) return;
 
-    const newGuessedLetters = [...guessedLetters, letter];
-    setGuessedLetters(newGuessedLetters);
-
-    if (!currentQuestion.word.includes(letter)) {
-      const newWrongGuesses = wrongGuesses + 1;
-      setWrongGuesses(newWrongGuesses);
-      
-      // Trigger shake animation
+    const isCorrect = userAnswer.trim().toUpperCase() === currentRiddle.answer;
+    
+    if (isCorrect) {
+      setGameStatus('won');
+      const riddleScore = Math.max(100 - (showHint ? 20 : 0), 10);
+      setScore(prev => prev + riddleScore);
+      setRiddlesCompleted(prev => prev + 1);
+    } else {
+      setGameStatus('lost');
+      // Trigger shake animation for incorrect answer
       Animated.sequence([
         Animated.timing(shakeAnimation, { toValue: 10, duration: 100, useNativeDriver: true }),
         Animated.timing(shakeAnimation, { toValue: -10, duration: 100, useNativeDriver: true }),
         Animated.timing(shakeAnimation, { toValue: 10, duration: 100, useNativeDriver: true }),
         Animated.timing(shakeAnimation, { toValue: 0, duration: 100, useNativeDriver: true }),
       ]).start();
-
-      if (newWrongGuesses >= MAX_WRONG_GUESSES) {
-        setGameStatus('lost');
-      }
     }
   };
 
-  // Check for win condition
-  useEffect(() => {
-    if (isWordComplete && gameStatus === 'playing') {
-      setGameStatus('won');
-      const questionScore = Math.max(100 - (wrongGuesses * 10) - (showHint ? 20 : 0), 10);
-      setScore(prev => prev + questionScore);
-      setQuestionsCompleted(prev => prev + 1);
-    }
-  }, [guessedLetters, gameStatus]);
-
-  // Next question
-  const nextQuestion = () => {
-    // Save current question result
-    const questionResult = {
-      question: currentQuestion,
+  // Next riddle
+  const nextRiddle = () => {
+    // Save current riddle result
+    const riddleResult = {
+      riddle: currentRiddle,
       status: gameStatus,
-      wrongGuesses,
       usedHint: showHint,
-      score: gameStatus === 'won' ? Math.max(100 - (wrongGuesses * 10) - (showHint ? 20 : 0), 10) : 0
+      score: gameStatus === 'won' ? Math.max(100 - (showHint ? 20 : 0), 10) : 0
     };
-    setQuestionsAnswered(prev => [...prev, questionResult]);
+    setRiddlesAnswered(prev => [...prev, riddleResult]);
 
-    if (currentQuestionIndex < gameQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+    if (currentRiddleIndex < gameRiddles.length - 1) {
+      setCurrentRiddleIndex(prev => prev + 1);
       resetGame();
     } else {
       // Game completed - show results
@@ -354,21 +376,21 @@ export default function GameScreen() {
         <View style={styles.selectionContent}>
           <View style={styles.selectionHeader}>
             <LinearGradient
-              colors={['#8B5CF6', '#A855F7']}
+              colors={['#F59E0B', '#D97706']}
               style={styles.selectionIcon}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Type size={32} color="white" strokeWidth={2.5} />
+              <FileText size={32} color="white" strokeWidth={2.5} />
             </LinearGradient>
-            <Text style={[styles.selectionTitle, { color: theme.text }]}>Hangman Game</Text>
+            <Text style={[styles.selectionTitle, { color: theme.text }]}>Riddle Game</Text>
             <Text style={[styles.selectionSubtitle, { color: theme.textSecondary }]}>
               Choose a subject to start learning
             </Text>
           </View>
 
           <View style={styles.optionsGrid}>
-            {Object.entries(GAME_SUBJECTS).map(([key, subject]) => {
+            {Object.entries(RIDDLE_SUBJECTS).map(([key, subject]) => {
               const IconComponent = subject.icon;
               return (
                 <TouchableOpacity
@@ -399,7 +421,7 @@ export default function GameScreen() {
 
   // Module Selection Screen
   const renderModuleSelection = () => {
-    const subjectData = GAME_SUBJECTS[selectedSubject as keyof typeof GAME_SUBJECTS];
+    const subjectData = RIDDLE_SUBJECTS[selectedSubject as keyof typeof RIDDLE_SUBJECTS];
     if (!subjectData) return null;
 
     return (
@@ -452,7 +474,7 @@ export default function GameScreen() {
                   </LinearGradient>
                   <Text style={[styles.cardTitle, { color: theme.text }]}>{module.name}</Text>
                   <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
-                    {module.questions.length} questions available
+                    {module.riddles.length} riddles available
                   </Text>
                 </TouchableOpacity>
               );
@@ -465,7 +487,7 @@ export default function GameScreen() {
 
   // Question Count Selection Screen
   const renderQuestionSelection = () => {
-    const subjectData = GAME_SUBJECTS[selectedSubject as keyof typeof GAME_SUBJECTS];
+    const subjectData = RIDDLE_SUBJECTS[selectedSubject as keyof typeof RIDDLE_SUBJECTS];
     // Fix TypeScript error by properly typing the modules access
     const modules = subjectData?.modules as Record<string, any>;
     const moduleData = modules?.[selectedModule];
@@ -477,7 +499,7 @@ export default function GameScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => setGamePhase('module-selection')}>
             <ArrowLeft size={24} color={theme.text} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.text }]}>Choose Questions</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Choose Riddles</Text>
         </View>
 
         <View style={styles.selectionContent}>
@@ -492,7 +514,7 @@ export default function GameScreen() {
             </LinearGradient>
             <Text style={[styles.selectionTitle, { color: theme.text }]}>{moduleData.name}</Text>
             <Text style={[styles.selectionSubtitle, { color: theme.textSecondary }]}>
-              How many questions would you like to answer?
+              How many riddles would you like to solve?
             </Text>
           </View>
 
@@ -523,73 +545,39 @@ export default function GameScreen() {
     );
   };
 
-  // Enhanced Hangman Display
-  const renderHangman = () => {
-    const hangmanStages = ['⚫', '│', '╱', '╲', '╱', '╲'];
+  // Riddle Display
+  const renderRiddle = () => {
+    if (!currentRiddle) return null;
     
     return (
-      <View style={styles.hangmanContainer}>
-        <LinearGradient
-          colors={['#EF4444', '#DC2626']}
-          style={styles.hangmanHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <AlertCircle size={20} color="white" strokeWidth={2.5} />
-          <Text style={styles.hangmanTitle}>Hangman Progress</Text>
-        </LinearGradient>
-        
-        <View style={[styles.hangmanFigure, { borderColor: theme.border }]}>
-          <View style={styles.hangmanPole}>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>┌─────┐</Text>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>│     │</Text>
-            <View style={styles.hangmanBody}>
-              {hangmanStages.slice(0, wrongGuesses).map((part, index) => (
-                <Text key={index} style={[styles.hangmanPart, { color: '#EF4444' }]}>
-                  {part}
-                </Text>
-              ))}
-            </View>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>│</Text>
-            <Text style={[styles.poleText, { color: theme.textSecondary }]}>└─────</Text>
-          </View>
+      <Animated.View style={[styles.riddleContainer, { transform: [{ translateX: shakeAnimation }] }]}>
+        <Text style={[styles.riddleTitle, { color: theme.text }]}>Solve the Riddle:</Text>
+        <View style={[styles.riddleCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.riddleQuestion, { color: theme.text }]}>{currentRiddle.question}</Text>
         </View>
         
-        <View style={[styles.progressContainer, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.wrongGuessesText, { color: theme.textSecondary }]}>
-            Wrong attempts: {wrongGuesses}/{MAX_WRONG_GUESSES}
-          </Text>
-          <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-            <View
-              style={[
-                styles.progressFill,
-                { 
-                  width: `${(wrongGuesses / MAX_WRONG_GUESSES) * 100}%`, 
-                  backgroundColor: wrongGuesses > 3 ? '#EF4444' : '#F59E0B' 
-                }
-              ]}
+        <View style={styles.answerSection}>
+          <Text style={[styles.answerLabel, { color: theme.text }]}>Your Answer:</Text>
+          <View style={[styles.answerInputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <TextInput
+              style={[styles.answerInput, { color: theme.text }]}
+              value={userAnswer}
+              onChangeText={setUserAnswer}
+              placeholder="Type your answer..."
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              onSubmitEditing={submitAnswer}
             />
           </View>
-        </View>
-      </View>
-    );
-  };
-
-  // Word Display
-  const renderWord = () => {
-    if (!currentQuestion) return null;
-    
-    return (
-      <Animated.View style={[styles.wordContainer, { transform: [{ translateX: shakeAnimation }] }]}>
-        <Text style={[styles.wordTitle, { color: theme.text }]}>Guess the Word:</Text>
-        <View style={styles.wordDisplay}>
-          {currentQuestion.word.split('').map((letter: string, index: number) => (
-            <View key={index} style={[styles.letterBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-              <Text style={[styles.letter, { color: theme.text }]}>
-                {guessedLetters.includes(letter) ? letter : '_'}
-              </Text>
-            </View>
-          ))}
+          
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: theme.primary }]}
+            onPress={submitAnswer}
+            disabled={!userAnswer.trim() || gameStatus !== 'playing'}
+          >
+            <Text style={styles.submitButtonText}>Submit Answer</Text>
+          </TouchableOpacity>
         </View>
       </Animated.View>
     );
@@ -597,7 +585,7 @@ export default function GameScreen() {
 
   // Hint Section
   const renderHintSection = () => {
-    if (!currentQuestion) return null;
+    if (!currentRiddle) return null;
     
     return (
       <View style={[styles.hintContainer, { backgroundColor: theme.surface }]}>
@@ -613,7 +601,7 @@ export default function GameScreen() {
         {showHint && (
           <View style={[styles.hintCard, { backgroundColor: theme.background }]}>
             <Text style={[styles.hintText, { color: theme.textSecondary }]}>
-              💡 {currentQuestion.hint}
+              💡 {currentRiddle.hint}
             </Text>
           </View>
         )}
@@ -621,50 +609,9 @@ export default function GameScreen() {
     );
   };
 
-  // Alphabet Keyboard
-  const renderKeyboard = () => {
-    if (!currentQuestion) return null;
-    
-    return (
-      <View style={styles.keyboardContainer}>
-        <Text style={[styles.keyboardTitle, { color: theme.text }]}>Select a Letter:</Text>
-        <View style={styles.keyboard}>
-          {alphabet.map((letter) => {
-            const isGuessed = guessedLetters.includes(letter);
-            const isCorrect = isGuessed && currentQuestion.word.includes(letter);
-            const isWrong = isGuessed && !currentQuestion.word.includes(letter);
-            
-            return (
-              <TouchableOpacity
-                key={letter}
-                style={[
-                  styles.keyButton,
-                  { backgroundColor: theme.surface, borderColor: theme.border },
-                  isCorrect && { backgroundColor: '#10B981', borderColor: '#10B981' },
-                  isWrong && { backgroundColor: '#EF4444', borderColor: '#EF4444' },
-                  isGuessed && { opacity: 0.6 }
-                ]}
-                onPress={() => guessLetter(letter)}
-                disabled={isGuessed || gameStatus !== 'playing'}
-              >
-                <Text style={[
-                  styles.keyText,
-                  { color: theme.text },
-                  (isCorrect || isWrong) && { color: 'white' }
-                ]}>
-                  {letter}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-    );
-  };
-
-  // Game Result for Individual Questions
-  const renderGameResult = () => {
-    if (gameStatus === 'playing' || !currentQuestion) return null;
+  // Riddle Result for Individual Riddles
+  const renderRiddleResult = () => {
+    if (gameStatus === 'playing' || !currentRiddle) return null;
 
     const isWon = gameStatus === 'won';
     return (
@@ -683,26 +630,28 @@ export default function GameScreen() {
         </LinearGradient>
         
         <Text style={[styles.resultTitle, { color: theme.text }]}>
-          {isWon ? 'Correct! 🎉' : 'Game Over 😞'}
+          {isWon ? 'Correct! 🎉' : 'Incorrect 😞'}
         </Text>
         
-        <Text style={[styles.resultWord, { color: theme.text }]}>
-          The word was: <Text style={{ fontWeight: '700' }}>{currentQuestion.word}</Text>
-        </Text>
+        {!isWon && (
+          <Text style={[styles.resultAnswer, { color: theme.text }]}>
+            The correct answer was: <Text style={{ fontWeight: '700' }}>{currentRiddle.answer}</Text>
+          </Text>
+        )}
         
-        <View style={[styles.definitionCard, { backgroundColor: theme.background }]}>
-          <Text style={[styles.definitionTitle, { color: theme.primary }]}>Definition:</Text>
-          <Text style={[styles.definitionText, { color: theme.textSecondary }]}>
-            {currentQuestion.definition}
+        <View style={[styles.explanationCard, { backgroundColor: theme.background }]}>
+          <Text style={[styles.explanationTitle, { color: theme.primary }]}>Explanation:</Text>
+          <Text style={[styles.explanationText, { color: theme.textSecondary }]}>
+            {currentRiddle.explanation}
           </Text>
         </View>
 
         <TouchableOpacity
           style={[styles.nextButton, { backgroundColor: theme.primary }]}
-          onPress={nextQuestion}
+          onPress={nextRiddle}
         >
           <Text style={styles.nextButtonText}>
-            {currentQuestionIndex < gameQuestions.length - 1 ? 'Next Question' : 'Finish Game'}
+            {currentRiddleIndex < gameRiddles.length - 1 ? 'Next Riddle' : 'Finish Game'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -713,10 +662,10 @@ export default function GameScreen() {
   const renderGameResults = () => {
     if (gamePhase !== 'results') return null;
 
-    const totalQuestions = questionsAnswered.length;
-    const correctAnswers = questionsAnswered.filter(q => q.status === 'won').length;
-    const totalScore = questionsAnswered.reduce((sum, q) => sum + q.score, 0);
-    const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+    const totalRiddles = riddlesAnswered.length;
+    const correctAnswers = riddlesAnswered.filter(q => q.status === 'won').length;
+    const totalScore = riddlesAnswered.reduce((sum, q) => sum + q.score, 0);
+    const accuracy = totalRiddles > 0 ? (correctAnswers / totalRiddles) * 100 : 0;
 
     return (
       <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -751,7 +700,7 @@ export default function GameScreen() {
             </View>
             <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
               <XCircle size={24} color="#EF4444" strokeWidth={2.5} />
-              <Text style={[styles.statNumber, { color: theme.text }]}>{totalQuestions - correctAnswers}</Text>
+              <Text style={[styles.statNumber, { color: theme.text }]}>{totalRiddles - correctAnswers}</Text>
               <Text style={[styles.statText, { color: theme.textSecondary }]}>Wrong</Text>
             </View>
             <View style={[styles.statItem, { backgroundColor: theme.surface }]}>
@@ -782,12 +731,12 @@ export default function GameScreen() {
     );
   };
 
-  // Move this useEffect to the top level to fix hooks order error
+  // Move useEffect for updating profile stats to the top level to fix hooks order error
+  const hasUpdatedStats = React.useRef(false);
   useEffect(() => {
-    if (gamePhase === 'results') {
-      const totalQuestions = questionsAnswered.length;
-      const correctAnswers = questionsAnswered.filter(q => q.status === 'won').length;
-      const totalScore = questionsAnswered.reduce((sum, q) => sum + q.score, 0);
+    if (gamePhase === 'results' && riddlesAnswered.length && !hasUpdatedStats.current) {
+      const totalScore = riddlesAnswered.reduce((sum, q) => sum + q.score, 0);
+      const correctAnswers = riddlesAnswered.filter(q => q.status === 'won').length;
       const updateStats = async () => {
         try {
           await updateProfileStats(totalScore, correctAnswers);
@@ -796,9 +745,13 @@ export default function GameScreen() {
         }
       };
       updateStats();
+      hasUpdatedStats.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gamePhase]);
+    if (gamePhase !== 'results') {
+      hasUpdatedStats.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamePhase, riddlesAnswered]);
 
   // Show different phases
   if (gamePhase === 'subject-selection') return renderSubjectSelection();
@@ -806,31 +759,14 @@ export default function GameScreen() {
   if (gamePhase === 'question-selection') return renderQuestionSelection();
   if (gamePhase === 'results') return renderGameResults();
 
-  // If not hangman game, show placeholder
-  if (type !== 'hangman') {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.surface }]}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.text }]}>Coming Soon</Text>
-        </View>
-        <View style={styles.content}>
-          <Text style={[styles.gameTitle, { color: theme.text }]}>This game will be implemented soon!</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // Main hangman game screen (playing phase)
+  // Main riddle game screen (playing phase)
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Hangman Game</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Riddle Game</Text>
         <TouchableOpacity 
           style={[styles.resetButtonStyle, { backgroundColor: theme.primary + '15' }]}
           onPress={restartGame}
@@ -848,23 +784,21 @@ export default function GameScreen() {
         <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
           <Zap size={16} color="#8B5CF6" />
           <Text style={[styles.statValue, { color: theme.text }]}>
-            {currentQuestionIndex + 1}/{gameQuestions.length}
+            {currentRiddleIndex + 1}/{gameRiddles.length}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Question</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Riddle</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
           <CheckCircle size={16} color="#10B981" />
-          <Text style={[styles.statValue, { color: theme.text }]}>{questionsCompleted}</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>{riddlesCompleted}</Text>
           <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
         </View>
       </View>
 
       <View style={styles.gameContent}>
-        {renderHangman()}
-        {renderWord()}
+        {renderRiddle()}
         {renderHintSection()}
-        {renderKeyboard()}
-        {renderGameResult()}
+        {renderRiddleResult()}
       </View>
     </ScrollView>
   );
@@ -921,41 +855,30 @@ const styles = StyleSheet.create({
   // Game Styles
   gameContent: { flex: 1, paddingHorizontal: 20, paddingBottom: 20 },
   
-  // Hangman Display
-  hangmanContainer: { alignItems: 'center', marginBottom: 24 },
-  hangmanHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    marginBottom: 16, elevation: 4
+  // Riddle Display
+  riddleContainer: { alignItems: 'center', marginBottom: 24 },
+  riddleTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  riddleCard: {
+    padding: 20, borderRadius: 12,
+    marginBottom: 20, elevation: 2,
+    width: '100%'
   },
-  hangmanTitle: { color: 'white', fontSize: 16, fontWeight: '700' },
-  hangmanFigure: {
-    width: 140, height: 160, borderWidth: 2, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-    padding: 12, marginBottom: 12, backgroundColor: '#f8f9fa'
-  },
-  hangmanPole: { alignItems: 'center' },
-  poleText: { fontSize: 16, fontFamily: 'monospace', lineHeight: 18 },
-  hangmanBody: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  hangmanPart: { fontSize: 18, margin: 1, fontWeight: '700' },
-  progressContainer: {
-    padding: 12, borderRadius: 8, alignItems: 'center',
-    minWidth: 140, elevation: 2
-  },
-  wrongGuessesText: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  progressBar: { width: 100, height: 6, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
+  riddleQuestion: { fontSize: 16, lineHeight: 22 },
   
-  // Word Display
-  wordContainer: { alignItems: 'center', marginBottom: 24 },
-  wordTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  wordDisplay: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  letterBox: {
-    width: 36, height: 42, borderRadius: 8, borderWidth: 2,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4, elevation: 1
+  // Answer Section
+  answerSection: { width: '100%' },
+  answerLabel: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  answerInputContainer: {
+    borderWidth: 2, borderRadius: 12,
+    marginBottom: 16, paddingHorizontal: 16,
+    paddingVertical: 12
   },
-  letter: { fontSize: 20, fontWeight: '700' },
+  answerInput: { fontSize: 16, fontWeight: '600' },
+  submitButton: {
+    padding: 16, borderRadius: 12,
+    alignItems: 'center', elevation: 2
+  },
+  submitButtonText: { color: 'white', fontSize: 16, fontWeight: '700' },
   
   // Hint Section
   hintContainer: { padding: 16, borderRadius: 12, marginBottom: 24, elevation: 2 },
@@ -966,17 +889,6 @@ const styles = StyleSheet.create({
   hintButtonText: { fontSize: 14, fontWeight: '600' },
   hintCard: { padding: 12, borderRadius: 8, marginTop: 8 },
   hintText: { fontSize: 14, textAlign: 'center', lineHeight: 20, fontStyle: 'italic' },
-  
-  // Keyboard
-  keyboardContainer: { marginBottom: 24 },
-  keyboardTitle: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
-  keyboard: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
-  keyButton: {
-    width: 36, height: 36, borderRadius: 8, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 6, elevation: 1
-  },
-  keyText: { fontSize: 14, fontWeight: '600' },
   
   // Question Selection
   questionOptions: { gap: 16 },
@@ -1004,7 +916,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 16, fontWeight: '700' },
   statLabel: { fontSize: 10, fontWeight: '500' },
   
-  // Game Results
+  // Riddle Results
   resultContainer: {
     padding: 20, borderRadius: 16, alignItems: 'center',
     marginBottom: 20, elevation: 4
@@ -1018,19 +930,19 @@ const styles = StyleSheet.create({
     fontSize: 20, fontWeight: '700', marginBottom: 8,
     textAlign: 'center'
   },
-  resultWord: {
+  resultAnswer: {
     fontSize: 16, marginBottom: 16,
     textAlign: 'center'
   },
-  definitionCard: {
+  explanationCard: {
     padding: 16, borderRadius: 12,
     marginBottom: 20, width: '100%'
   },
-  definitionTitle: {
+  explanationTitle: {
     fontSize: 14, fontWeight: '700',
     marginBottom: 8
   },
-  definitionText: {
+  explanationText: {
     fontSize: 14, lineHeight: 20
   },
   nextButton: {
@@ -1059,18 +971,6 @@ const styles = StyleSheet.create({
   },
   statNumber: { fontSize: 20, fontWeight: '700', marginVertical: 4 },
   statText: { fontSize: 12, fontWeight: '500' },
-  
-  performanceCard: {
-    padding: 20, borderRadius: 16, alignItems: 'center',
-    marginBottom: 24, elevation: 4
-  },
-  performanceIcon: {
-    width: 56, height: 56, borderRadius: 28,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 12, elevation: 4
-  },
-  performanceTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  performanceText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
   
   actionButtons: { flexDirection: 'row', gap: 12 },
   actionButton: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center', elevation: 2 },
